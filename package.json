@@ -1,0 +1,39 @@
+{
+  "name": "my.yes-maybe-no",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "pretest": "npm run lint",
+    "test": "npm run build && node --test test/game.test.js",
+    "dev": "nuxt dev",
+    "dev:front": "nuxt dev",
+    "dev:back": "npm run start:dev --prefix backend",
+    "dev:all": "npm run dev:back & npm run dev:front",
+    "nuxt:build": "nuxt build",
+    "start": "nuxt start",
+    "e2e": "node e2e/test.js",
+    "e2e:attach": "node e2e/test.js --attach",
+    "test:pw": "playwright test",
+    "test:pw:ui": "playwright test --ui",
+    "lint": "eslint . --ext .ts,.js,.vue",
+    "lint:fix": "eslint . --ext .ts,.js,.vue --fix"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.9.0",
+    "eslint-plugin-vue": "^9.27.0",
+    "nuxt": "3.19.1",
+    "socket.io-client": "^4.8.1",
+    "typescript": "^5.5.3",
+    "vue-eslint-parser": "^9.4.3"
+  },
+  "private": true,
+  "dependencies": {
+    "pg": "^8.16.3",
+    "socket.io": "^4.8.1"
+  }
+}

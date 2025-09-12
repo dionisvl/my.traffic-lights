@@ -1,0 +1,202 @@
+@startuml Traffic Light Game Flow
+
+title Traffic Light Game - Complete Flow Sequence
+
+participant "Player 1\n(Admin)" as P1
+participant "Frontend 1" as F1 
+participant "Player 2" as P2
+participant "Frontend 2" as F2
+participant "NestJS Backend" as BE
+participant "Socket Gateway" as SG
+participant "Game Store" as GS
+participant "Core Game Logic" as CGL
+participant "Repository" as REPO
+
+== Game Creation ==
+P1 -> F1: Opens http://localhost:3001/
+F1 -> P1: Shows game creation form
+P1 -> F1: Checks 18+, enters questions
+P1 -> F1: Clicks "Create Game"
+F1 -> BE: POST /game {questions: string[]}
+BE -> GS: createGame(questions)
+GS -> CGL: createGame(uuid, questions)
+CGL -> REPO: save GameState (status: waiting)
+REPO --> CGL: GameState saved
+CGL --> GS: GameState
+GS --> BE: gameId
+BE --> F1: {gameId: uuid}
+F1 -> F1: navigateTo(/game/{uuid})
+F1 -> BE: GET /game/{uuid}
+BE -> GS: getSnapshot(gameId) 
+GS -> REPO: get(gameId)
+REPO --> GS: GameState
+GS -> CGL: toSnapshot(state)
+CGL --> GS: snapshot
+GS --> BE: snapshot
+BE --> F1: {game, players, answers}
+F1 -> F1: Mount game page, show waiting state
+
+== Player Connection & Socket Setup ==
+F1 -> F1: ensurePlayerId() -> sessionStorage
+F1 -> SG: connect() via Socket.IO
+F1 -> SG: emit('join_game', {gameId, playerId})
+SG -> GS: joinGame(gameId, playerId)
+GS -> CGL: joinGame(state, playerId)
+note right: Assigns P1 role (first player)
+CGL -> REPO: save updated GameState
+CGL --> GS: {state, role: 'p1'}
+GS -> GS: setOnline(gameId, 'p1', true) in memory
+GS --> SG: role 'p1'
+SG -> F1: emit('joined', {role: 'p1'})
+SG -> F1: emit('player_status', {player: 'p1', online: true})
+F1 -> P1: Shows "P1: Online" + waiting message
+
+== Player 2 Joins ==
+P2 -> F2: Opens shared link /game/{uuid}
+F2 -> BE: GET /game/{uuid}
+BE --> F2: Game snapshot
+F2 -> F2: Mount game page
+F2 -> F2: ensurePlayerId() -> sessionStorage  
+F2 -> SG: connect() via Socket.IO
+F2 -> SG: emit('join_game', {gameId, playerId})
+SG -> GS: joinGame(gameId, playerId)
+GS -> CGL: joinGame(state, playerId)
+note right: Assigns P2 role (second player)
+CGL -> REPO: save updated GameState
+CGL --> GS: {state, role: 'p2'}
+GS -> GS: setOnline(gameId, 'p2', true) in memory
+GS --> SG: role 'p2'
+SG -> F2: emit('joined', {role: 'p2'})
+SG -> F1: emit('player_status', {player: 'p2', online: true})
+SG -> F2: emit('player_status', {player: 'p2', online: true})
+F1 -> P1: Shows "P2: Online" + Start button
+F2 -> P2: Shows waiting for game start
+
+== Game Start ==
+P1 -> F1: Clicks "Start Game"
+F1 -> SG: emit('start_game', {gameId})
+SG -> GS: startGame(gameId, 'p1')
+GS -> CGL: startGame(state, 'p1')
+note right: Only admin (P1) can start
+CGL -> REPO: save GameState (status: in_progress)
+CGL --> GS: updated GameState
+GS --> SG: success
+SG -> F1: emit('game_started', {})
+SG -> F2: emit('game_started', {})
+SG -> F1: emit('question_show', {questionIndex: 0})
+SG -> F2: emit('question_show', {questionIndex: 0})
+F1 -> P1: Shows Question 1 + answer buttons
+F2 -> P2: Shows Question 1 + answer buttons
+
+== Answering Questions ==
+P1 -> F1: Clicks "🟢 Yes" (green)
+F1 -> F1: my.answer = 'green', my.ready = false (watcher)
+F1 -> SG: emit('choose_answer', {gameId, questionIndex: 0, answer: 'green'})
+SG -> GS: chooseAnswer(gameId, 'p1', 0, 'green')
+GS -> CGL: chooseAnswer(state, 'p1', 0, 'green')
+note right: Sets revealedAt timestamp, resets ready=false
+CGL -> REPO: save updated GameState
+CGL --> GS: updated GameState
+GS --> SG: success
+SG -> F1: emit('answer_updated', {questionIndex: 0})
+SG -> F2: emit('answer_updated', {questionIndex: 0})
+F2 -> P2: Shows "Partner has answered"
+
+P2 -> F2: Clicks "🔴 No" (red) 
+F2 -> F2: my.answer = 'red', my.ready = false
+F2 -> SG: emit('choose_answer', {gameId, questionIndex: 0, answer: 'red'})
+SG -> GS: chooseAnswer(gameId, 'p2', 0, 'red')
+GS -> CGL: chooseAnswer(state, 'p2', 0, 'red')
+CGL -> REPO: save updated GameState
+CGL --> GS: updated GameState
+GS --> SG: success
+SG -> F1: emit('answer_updated', {questionIndex: 0})
+SG -> F2: emit('answer_updated', {questionIndex: 0})
+F1 -> P1: Shows "Partner has answered"
+F1 -> P1: Shows results table with both answers (🟢/🔴)
+F2 -> P2: Shows results table with both answers (🟢/🔴)
+
+== Adding Comments ==
+P1 -> F1: Types in comment field: "I love it!"
+F1 -> F1: my.ready = false (watcher on comment change)
+F1 -> SG: emit('submit_comment', {gameId, questionIndex: 0, comment: "I love it!"})
+SG -> GS: submitComment(gameId, 'p1', 0, "I love it!")
+GS -> CGL: submitComment(state, 'p1', 0, "I love it!")
+CGL -> REPO: save updated GameState
+CGL --> GS: updated GameState
+GS --> SG: success
+SG -> F1: emit('comment_received', {questionIndex: 0, player: 'p1'})
+SG -> F2: emit('comment_received', {questionIndex: 0, player: 'p1'})
+F1 -> P1: Shows comment in results table
+F2 -> P2: Shows comment in results table
+
+== Ready for Next Question ==
+P1 -> F1: Tries to check "Ready for next"
+F1 -> F1: Validation: Check if answer selected
+alt Answer not selected
+  F1 -> P1: Shows alert "Please select an answer"
+  F1 -> F1: my.ready remains false
+else Answer selected
+  F1 -> F1: my.ready = true
+  F1 -> SG: emit('ready_next', {gameId, questionIndex: 0, ready: true})
+  SG -> GS: setReady(gameId, 'p1', 0, true)
+  GS -> CGL: setReady(state, 'p1', 0, true)
+  note right: Checks if both players ready
+  CGL -> REPO: save updated GameState
+  CGL --> GS: updated GameState (still waiting for P2)
+  GS --> SG: updated GameState (no next_question yet)
+end
+
+P2 -> F2: Checks "Ready for next"
+F2 -> F2: Validation: Check if answer selected (passed)
+F2 -> F2: my.ready = true
+F2 -> SG: emit('ready_next', {gameId, questionIndex: 0, ready: true})
+SG -> GS: setReady(gameId, 'p2', 0, true)
+GS -> CGL: setReady(state, 'p2', 0, true)
+note right: Both players ready - advance to next question
+CGL -> REPO: save GameState (currentQuestionIndex: 1)
+CGL --> GS: GameState (currentQuestionIndex: 1)
+GS --> SG: GameState
+note right: Backend checks: idx (1) > questionIndex (0) = true
+SG -> F1: emit('next_question', {questionIndex: 1})
+SG -> F2: emit('next_question', {questionIndex: 1})
+F1 -> F1: Clear comment field, reset ready=false
+F2 -> F2: Clear comment field, reset ready=false
+F1 -> P1: Shows Question 2, cleared inputs
+F2 -> P2: Shows Question 2, cleared inputs
+
+== Repeat for Remaining Questions ==
+note over P1, REPO: Same flow repeats for each question...
+
+== Game Completion (Last Question) ==
+P1 -> F1: Answers last question + ready
+P2 -> F2: Answers last question + ready
+F2 -> SG: emit('ready_next', {gameId, questionIndex: N-1, ready: true})
+SG -> GS: setReady(gameId, 'p2', N-1, true)
+GS -> CGL: setReady(state, 'p2', N-1, true)
+note right: Both ready on last question - complete game
+CGL -> REPO: save GameState (status: 'completed')
+CGL --> GS: GameState (status: 'completed')
+GS --> SG: GameState
+SG -> F1: emit('game_completed', {})
+SG -> F2: emit('game_completed', {})
+F1 -> P1: Shows "Game completed" + full results table
+F2 -> P2: Shows "Game completed" + full results table
+
+== Player Disconnection/Reconnection ==
+F2 -> F2: Page closes/navigates away
+SG -> SG: handleDisconnect() detects socket close
+SG -> GS: setOnline(gameId, 'p2', false) 
+SG -> F1: emit('player_status', {player: 'p2', online: false})
+F1 -> P1: Shows "P2: Offline"
+
+P2 -> F2: Returns to game URL
+F2 -> BE: GET /game/{uuid} (hydrate state)
+F2 -> SG: reconnect + emit('join_game')
+SG -> GS: joinGame() (existing player)
+GS -> GS: setOnline(gameId, 'p2', true)
+SG -> F1: emit('player_status', {player: 'p2', online: true})
+F1 -> P1: Shows "P2: Online"
+F2 -> P2: Game state restored
+
+@enduml

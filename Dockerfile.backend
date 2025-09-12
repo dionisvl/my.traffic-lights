@@ -1,0 +1,14 @@
+FROM node:18-alpine
+WORKDIR /app/backend
+
+# Install backend deps
+COPY backend/package.json ./package.json
+RUN npm install --production=false
+
+# Copy sources (in dev compose we mount volume instead)
+COPY backend/ ./
+COPY src/ /app/src/
+
+EXPOSE 4000
+CMD ["npm", "run", "start:dev"]
+
