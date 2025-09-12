@@ -55,6 +55,8 @@ test.describe('Basic Game Flow', () => {
     await expect(page.getByRole('button', { name: '🟢 Yes' })).not.toBeVisible();
     await expect(page.getByPlaceholder('Comment')).not.toBeVisible();
     await expect(page.getByLabel('Ready for next')).not.toBeVisible();
+
+    await expect(page.getByText('Waiting for Player 2 to connect. Once Player 2 is online, you can start the game.')).toBeVisible();
   });
 
   test('should handle two players and show the results table', async ({ context }) => {

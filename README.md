@@ -1,4 +1,4 @@
-# Traffic Lights — two‑player online game (MVP)
+# Traffic Lights — two‑player online game
 
 Stack: Nuxt 3 (frontend) + NestJS (backend) + Socket.IO. Two players choose answers (🔴/🟡/🟢), add comments, and move forward only when both are ready. State is kept in memory or in Postgres.
 

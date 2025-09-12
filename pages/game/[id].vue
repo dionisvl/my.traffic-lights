@@ -1,23 +1,28 @@
 <template>
   <main class="container" v-if="state">
     <header class="row between">
-      <strong>Question {{ state.game.currentQuestionIndex + 1 }} of {{ state.game.total }}</strong>
+      <h1>Traffic Lights Game</h1>
       <span>
-        <b>P1:</b> {{ online.p1 ? 'Online' : 'Offline' }} ·
-        <b>P2:</b> {{ online.p2 ? 'Online' : 'Offline' }}
+        <b>P1:</b> <span :class="['status-indicator', online.p1 ? 'online' : 'offline']"></span> {{ online.p1 ? 'Online' : 'Offline' }} ·
+        <b>P2:</b> <span :class="['status-indicator', online.p2 ? 'online' : 'offline']"></span> {{ online.p2 ? 'Online' : 'Offline' }}
       </span>
+    </header>
+
+    <header class="row between">
+      <strong>Question {{ state.game.currentQuestionIndex + 1 }} of {{ state.game.total }}</strong>
     </header>
     <div class="row between">
       <span v-if="state.game.status==='waiting' && !isAdmin">Waiting for game to start...</span>
+      <span v-if="state.game.status==='waiting' && isAdmin && !online.p2">Waiting for Player 2 to connect. Once Player 2 is online, you can start the game.</span>
     </div>
 
     <section class="card" v-if="state.game.status === 'in_progress'">
       <h2>{{ current.questionText }}</h2>
 
       <div class="choices">
-        <button :class="{red: my.answer==='red'}" @click="choose('red')">🔴 No</button>
-        <button :class="{yellow: my.answer==='yellow'}" @click="choose('yellow')">🟡 Maybe</button>
         <button :class="{green: my.answer==='green'}" @click="choose('green')">🟢 Yes</button>
+        <button :class="{yellow: my.answer==='yellow'}" @click="choose('yellow')">🟡 Maybe</button>
+        <button :class="{red: my.answer==='red'}" @click="choose('red')">🔴 No</button>
       </div>
 
       <div class="row">
@@ -219,18 +224,203 @@ async function refresh() {
 </script>
 
 <style scoped>
-.container { max-width: 720px; margin: 2rem auto; display: grid; gap: 1rem; }
-.row { display: flex; align-items: center; gap: .5rem; }
-.between { justify-content: space-between; }
-.card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; }
-.choices { display: flex; gap: .5rem; }
-.choices button { padding: .5rem 1rem; }
-.choices button.red { background: #ffd6d6 }
-.choices button.yellow { background: #fff4c2 }
-.choices button.green { background: #d8ffd6 }
-.hint { color: #666 }
-.results { margin-top: 2rem; }
-table { width: 100%; border-collapse: collapse; }
-th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
-th { background-color: #f5f5f5; font-weight: bold; }
+.container {
+  max-width: 720px;
+  margin: 2rem auto;
+  display: grid;
+  gap: 1.5rem; /* Consistent gap */
+  padding: 2rem;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+header {
+  text-align: center;
+  font-size: 1.1em;
+  color: #555;
+}
+
+header strong {
+  font-size: 1.4em;
+  color: #2c3e50;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.between {
+  justify-content: space-between;
+}
+
+.card {
+  border: 1px solid #e0e0e0; /* Lighter border */
+  border-radius: 12px;
+  padding: 1.5rem;
+  background-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.card h2 {
+  text-align: center;
+  font-size: 1.8em;
+  color: #2c3e50;
+}
+
+.choices {
+  display: flex;
+  gap: 1rem; /* Increased gap for buttons */
+  justify-content: center;
+}
+
+.choices button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  color: #000000;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+  flex-grow: 1; /* Allow buttons to grow */
+  max-width: 180px; /* Max width for buttons */
+  margin-bottom: 1.5rem;
+}
+
+.choices button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.choices button.red { background: #e74c3c; } /* Flat UI colors */
+.choices button.red:hover { background: #c0392b; }
+.choices button.red.red { box-shadow: 0 0 0 3px #e74c3c; } /* Highlight selected */
+
+.choices button.yellow { background: #f1c40f; }
+.choices button.yellow:hover { background: #f39c12; }
+.choices button.yellow.yellow { box-shadow: 0 0 0 3px #f1c40f; }
+
+.choices button.green { background: #2ecc71; }
+.choices button.green:hover { background: #27ae60; }
+.choices button.green.green { box-shadow: 0 0 0 3px #2ecc71; }
+
+textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1em;
+  min-height: 80px; /* Smaller height for comment */
+  resize: vertical;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: border-color 0.3s ease;
+}
+
+textarea:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+label.row {
+  margin-top: 1rem;
+  font-size: 1em;
+  color: #555;
+}
+
+input[type="checkbox"] {
+  width: 1.2em;
+  height: 1.2em;
+  accent-color: #007bff;
+}
+
+.hint {
+  color: #777;
+  font-size: 0.9em;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.results {
+  margin-top: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+}
+
+.results h3 {
+  text-align: center;
+  color: #2c3e50;
+  font-size: 1.6em;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+th, td {
+  border: 1px solid #e0e0e0;
+  padding: 0.8rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  color: #444;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #fcfcfc;
+}
+
+footer {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+footer button {
+  padding: 0.8rem 2rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+footer button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+footer span {
+  font-size: 1.1em;
+  color: #555;
+}
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.status-indicator.online {
+  background-color: #2ecc71; /* Green */
+}
+
+.status-indicator.offline {
+  background-color: #e74c3c; /* Red */
+}
 </style>

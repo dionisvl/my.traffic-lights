@@ -1,6 +1,6 @@
 <template>
   <main class="container">
-    <h1>Traffic Light — Create Game</h1>
+    <h1>Traffic Lights — Create Game</h1>
     <label class="row">
       <input type="checkbox" v-model="adult" />
       <span>I'm 18+</span>
@@ -48,8 +48,99 @@ async function copy() {
 </script>
 
 <style scoped>
-.container { max-width: 720px; margin: 2rem auto; display: grid; gap: 1rem; }
-.row { display: flex; align-items: center; gap: .5rem; }
-textarea { width: 100%; }
-button { padding: .5rem 1rem; }
+.container {
+  max-width: 720px;
+  margin: 2rem auto;
+  display: grid;
+  gap: 1.5rem; /* Increased gap for better spacing */
+  padding: 2rem; /* Add some padding */
+  background-color: #f9f9f9; /* Light background */
+  border-radius: 12px; /* Rounded corners */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Subtle shadow */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font */
+  color: #333; /* Darker text for readability */
+}
+
+h1 {
+  text-align: center;
+  color: #2c3e50; /* Darker heading color */
+  font-size: 2.2em;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: .75rem; /* Slightly increased gap */
+}
+
+textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1em;
+  min-height: 120px;
+  resize: vertical;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: border-color 0.3s ease;
+}
+
+textarea:focus {
+  border-color: #007bff; /* Highlight on focus */
+  outline: none;
+}
+
+button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff; /* Primary button color */
+  color: white;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+  background-color: #0056b3; /* Darker on hover */
+  transform: translateY(-1px); /* Slight lift */
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+input[type="checkbox"] {
+  width: 1.2em;
+  height: 1.2em;
+  accent-color: #007bff; /* Checkbox color */
+}
+
+p.row {
+  background-color: #e9ecef;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  word-break: break-all; /* Ensure long links wrap */
+  font-size: 0.95em;
+  color: #555;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+p.row span {
+  flex-grow: 1;
+}
+
+.row NuxtLink {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.row NuxtLink:hover {
+  text-decoration: underline;
+}
 </style>

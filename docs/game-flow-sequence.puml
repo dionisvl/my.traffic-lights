@@ -1,6 +1,6 @@
-@startuml Traffic Light Game Flow
+@startuml Traffic Lights Game Flow
 
-title Traffic Light Game - Complete Flow Sequence
+title Traffic Lights Game - Complete Flow Sequence
 
 participant "Player 1\n(Admin)" as P1
 participant "Frontend 1" as F1 
