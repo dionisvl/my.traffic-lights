@@ -39,9 +39,16 @@ E2E script now targets the Nest backend. It starts `npm run start:dev --prefix b
 - connects two Socket.IO clients, runs the flow, and polls `GET /game/:id`
 
 ## Playwright Tests
-To run the browser-based end-to-end tests, use the following command:
+To run the browser-based end-to-end tests, use one of these commands:
+
+**With Docker services:**
 ```bash
-npx playwright test
+make playwright-docker
+```
+
+**Standalone (starts own servers):**
+```bash
+make playwright
 ```
 This will launch a real browser and simulate the full user flow.
 
