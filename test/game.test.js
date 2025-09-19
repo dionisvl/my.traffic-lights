@@ -136,7 +136,7 @@ describe('Answer/comment/ready flow', () => {
 });
 
 describe('Snapshot shape', () => {
-  it('matches plan.md shape', () => {
+  it('matches shape', () => {
     let s = unwrap(createGame('g', ['Q1', 'Q2']));
     s = unwrap(joinGame(s, 'A')).state;
     s = unwrap(joinGame(s, 'B')).state;

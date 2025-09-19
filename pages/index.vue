@@ -7,6 +7,14 @@
     </label>
 
     <textarea v-model="raw" rows="8" placeholder="Enter questions, one per line"></textarea>
+
+    <div v-if="files.length" class="server-files">
+      <span class="muted">Or pick from server files:</span>
+      <div class="row wrap">
+        <button v-for="f in files" :key="f.name" class="secondary" @click="loadFile(f.name)">{{ f.name }}</button>
+      </div>
+    </div>
+
     <div class="row">
       <button :disabled="!canCreate" @click="create">Create Game</button>
     </div>
@@ -22,6 +30,7 @@
 const adult = ref(false)
 const raw = ref('')
 const link = ref<string| null>(null)
+const files = ref<{ name: string }[]>([])
 
 const canCreate = computed(() => adult.value && raw.value.trim().length > 0)
 
@@ -44,6 +53,32 @@ async function create() {
 async function copy() {
   if (!link.value) return
   await navigator.clipboard.writeText(new URL(link.value, location.origin).toString())
+}
+
+onMounted(async () => {
+  await fetchFiles()
+})
+
+async function fetchFiles() {
+  try {
+    const config = useRuntimeConfig()
+    const base = (config.public as any).apiBase || 'http://localhost:4000'
+    const res = await $fetch<{ files: { name: string }[] }>(`${base}/questions`)
+    files.value = res.files || []
+  } catch {
+    files.value = []
+  }
+}
+
+async function loadFile(name: string) {
+  try {
+    const config = useRuntimeConfig()
+    const base = (config.public as any).apiBase || 'http://localhost:4000'
+    const res = await $fetch<{ content: string }>(`${base}/questions/${encodeURIComponent(name)}`)
+    raw.value = res.content || ''
+  } catch (e) {
+    alert('Failed to load file')
+  }
 }
 </script>
 
@@ -73,6 +108,8 @@ h1 {
   gap: .75rem; /* Slightly increased gap */
 }
 
+.wrap { flex-wrap: wrap; }
+
 textarea {
   width: 100%;
   padding: 0.8rem;
@@ -101,6 +138,18 @@ button {
   transition: background-color 0.3s ease, transform 0.1s ease;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
+
+.secondary {
+  background: #e9ecef;
+  color: #333;
+}
+
+.server-files {
+  display: grid;
+  gap: .5rem;
+}
+
+.muted { color: #666; font-size: .9em; }
 
 button:hover {
   background-color: #0056b3; /* Darker on hover */

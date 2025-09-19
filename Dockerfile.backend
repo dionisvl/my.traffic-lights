@@ -1,17 +1,35 @@
-FROM node:20-alpine
-WORKDIR /app
+#############################
+# Backend multi-stage Dockerfile (dev + prod)
+#############################
 
-# Install backend deps
+FROM node:20-alpine AS base
+WORKDIR /app
 COPY backend/package.json backend/package-lock.json ./backend/
 RUN cd backend && npm ci
 
-# Copy game engine
+# --- Dev stage ---
+FROM base AS dev
+WORKDIR /app
 COPY src/ ./src/
-
-# Copy backend sources
 COPY backend/ ./backend/
-
 EXPOSE 4000
 WORKDIR /app/backend
+ENV NODE_ENV=development
 CMD ["npm", "run", "start:dev"]
 
+# --- Build stage ---
+FROM base AS build
+WORKDIR /app
+COPY src/ ./src/
+COPY backend/ ./backend/
+RUN npm run build --prefix backend
+
+# --- Prod runtime ---
+FROM node:20-alpine AS prod
+WORKDIR /app/backend
+ENV NODE_ENV=production
+COPY --from=build /app/backend/dist ./dist
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci --omit=dev
+EXPOSE 4000
+CMD ["node", "dist/main.js"]
