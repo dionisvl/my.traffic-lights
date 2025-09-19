@@ -159,10 +159,15 @@ export function setReady(
   if (!p2.ok) return p2;
 
   const qPrev = state.answers[questionIndex];
+  // Do not allow marking ready if no answer selected
+  if (ready && !qPrev[by].answer) {
+    return err('bad_state', 'Cannot be ready without an answer');
+  }
   const q: QuestionState = { ...qPrev, [by]: { ...qPrev[by], ready } } as QuestionState;
   let next: GameState = { ...state, answers: state.answers.map((x, i) => (i === questionIndex ? q : x)) };
 
-  const bothReady = q.p1.ready && q.p2.ready;
+  // Advance only when both players are ready AND both provided answers
+  const bothReady = q.p1.ready && q.p2.ready && !!q.p1.answer && !!q.p2.answer;
   const isLast = questionIndex >= state.questions.length - 1;
   if (bothReady) {
     if (isLast) {
@@ -189,9 +194,8 @@ export function toSnapshot(state: GameState) {
     answers: state.answers.map((a) => ({
       questionIndex: a.questionIndex,
       questionText: a.questionText,
-      player1: { answer: a.p1.answer, comment: a.p1.comment },
-      player2: { answer: a.p2.answer, comment: a.p2.comment },
+      player1: { answer: a.p1.answer, comment: a.p1.comment, ready: a.p1.ready },
+      player2: { answer: a.p2.answer, comment: a.p2.comment, ready: a.p2.ready },
     })),
   } as const;
 }
-

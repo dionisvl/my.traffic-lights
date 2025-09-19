@@ -93,6 +93,8 @@ export class GameGateway {
     const role = ((socket.data||{}).role || 'p1') as Role
     try {
       const s = await setReady(body.gameId, role, body.questionIndex, body.ready)
+      // Inform clients about readiness change even if no transition happens
+      this.io.to(this.room(body.gameId)).emit('ready_updated', { questionIndex: body.questionIndex, player: role, ready: body.ready })
       const idx = s.currentQuestionIndex
       if (s.status === 'completed') {
         this.io.to(this.room(body.gameId)).emit('game_completed', { })
@@ -107,4 +109,3 @@ export class GameGateway {
   }
 
 }
-

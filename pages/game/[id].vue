@@ -1,22 +1,27 @@
 <template>
   <main class="container" v-if="state">
     <header class="row between">
-      <h1>Traffic Lights Game</h1>
+      <div class="brand row">
+        <a href="/" target="_blank" rel="noopener" aria-label="Open home in new tab" class="brand-link">🚦</a>
+        <h1>Traffic Lights Game</h1>
+      </div>
       <span>
         <b>P1:</b> <span :class="['status-indicator', online.p1 ? 'online' : 'offline']"></span> {{ online.p1 ? 'Online' : 'Offline' }} ·
         <b>P2:</b> <span :class="['status-indicator', online.p2 ? 'online' : 'offline']"></span> {{ online.p2 ? 'Online' : 'Offline' }}
       </span>
     </header>
 
-    <header class="row between">
-      <strong>Question {{ state.game.currentQuestionIndex + 1 }} of {{ state.game.total }}</strong>
-    </header>
     <div class="row between">
       <span v-if="state.game.status==='waiting' && !isAdmin">Waiting for game to start...</span>
       <span v-if="state.game.status==='waiting' && isAdmin && !online.p2">Waiting for Player 2 to connect. Once Player 2 is online, you can start the game.</span>
     </div>
+    <div class="row share-actions" v-if="state.game.status==='waiting' && isAdmin">
+      <button @click="shareNative">Share…</button>
+      <button @click="copyGameLink">Copy link</button>
+    </div>
 
     <section class="card" v-if="state.game.status === 'in_progress'">
+      <h3>Question #{{ state.game.currentQuestionIndex + 1 }}</h3>
       <h2>{{ current.questionText }}</h2>
 
       <div class="choices">
@@ -29,13 +34,19 @@
         <textarea v-model="my.comment" rows="3" placeholder="Comment"></textarea>
       </div>
 
-      <label class="row">
-        <input type="checkbox" v-model="my.ready" @change="handleReadyChange" /> Ready for next
+      <label class="ready-toggle" :class="{ active: my.ready }">
+        <input type="checkbox" v-model="my.ready" @change="handleReadyChange" />
+        <span class="ready-text">Ready for next</span>
       </label>
 
       <div class="hint">
-        <span v-if="!partner.ready && partner.answer">Partner has answered</span>
-        <span v-else-if="partner.ready">Partner is ready</span>
+        <template v-if="partnerReady">
+          <span>Partner is ready</span>
+        </template>
+        <template v-else>
+          <span class="spinner" aria-label="waiting"></span>
+          <span>Partner is choosing…</span>
+        </template>
       </div>
     </section>
 
@@ -45,6 +56,7 @@
       <table>
         <thead>
           <tr>
+            <th>#</th>
             <th>Question</th>
             <th>Player 1</th>
             <th>Comment 1</th>
@@ -54,6 +66,7 @@
         </thead>
         <tbody>
           <tr v-for="(answer, idx) in answeredQuestions" :key="idx">
+            <td>{{ answer.questionIndex + 1 }}</td>
             <td>{{ answer.questionText }}</td>
             <td>{{ getAnswerEmoji(answer.player1.answer) }}</td>
             <td>{{ answer.player1.comment || '' }}</td>
@@ -87,16 +100,27 @@ const partner = reactive({ answer: undefined as Answer | undefined, comment: '',
 const isAdmin = computed(() => role.value === 'p1')
 
 
+// Partner status derived from server snapshot so hint and spinner are accurate
+const partnerQA = computed(() => {
+  const snap = state.value
+  const idx = snap?.game?.currentQuestionIndex ?? 0
+  const row = snap?.answers?.[idx]
+  if (!row || !role.value) return { answer: undefined, comment: '', ready: false } as any
+  return role.value === 'p1' ? row.player2 : row.player1
+})
+const partnerReady = computed(() => !!partnerQA.value?.ready)
+
 const answeredQuestions = computed(() => {
   if (!state.value?.answers) return []
-  if (state.value.game.status === 'completed') {
+  const status = state.value.game.status
+  const idx = state.value.game.currentQuestionIndex ?? 0
+  if (status === 'completed') {
     // Show all questions when game is completed
     return state.value.answers
   }
-  // During game, show only questions where both players answered
-  return state.value.answers.filter((answer: any) => 
-    answer.player1.answer && answer.player2.answer
-  )
+  // While in progress, show all questions up to the current one (inclusive),
+  // so the newly revealed question appears immediately with empty cells.
+  return state.value.answers.slice(0, idx + 1)
 })
 
 onMounted(async () => {
@@ -119,6 +143,10 @@ onMounted(async () => {
   s.on('game_started', () => { 
     state.value.game.status = 'in_progress' 
     state.value.game.currentQuestionIndex = 0
+    // Reset local selections when game starts
+    my.answer = undefined
+    my.comment = ''
+    my.ready = false
     // If user marked ready early, re-send readiness now that game started
     if (my.ready) emit('ready_next', { ready: true })
   })
@@ -129,11 +157,14 @@ onMounted(async () => {
   })
   s.on('answer_updated', async () => { await refresh() })
   s.on('comment_received', async () => { await refresh() })
+  s.on('ready_updated', async () => { await refresh() })
   s.on('next_question', (p: any) => { 
     state.value.game.currentQuestionIndex = p.questionIndex
     // Clear comment field and ready checkbox when moving to next question
     my.comment = ''
     my.ready = false
+    // Also clear selected answer highlight for the new question
+    my.answer = undefined
   })
   s.on('game_completed', async () => { 
     state.value.game.status = 'completed'
@@ -221,6 +252,39 @@ async function refresh() {
   const snap = await $fetch(`${base}/game/${gameId}`)
   state.value = snap
 }
+
+async function copyGameLink() {
+  try {
+    await navigator.clipboard.writeText(location.href)
+    alert('Link copied')
+  } catch (e) {
+    // Fallback: open prompt if clipboard access denied
+    prompt('Copy game link:', location.href)
+  }
+}
+
+function shareTelegram() {
+  const url = encodeURIComponent(location.href)
+  const text = encodeURIComponent('Join the Traffic Lights game')
+  const shareUrl = `https://t.me/share/url?url=${url}&text=${text}`
+  window.open(shareUrl, '_blank', 'noopener')
+}
+
+async function shareNative() {
+  const url = location.href
+  const title = 'Traffic Lights — Game'
+  const text = 'Join the Traffic Lights game'
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text, url })
+      return
+    } catch (e) {
+      // User cancelled or share failed; fall back below
+    }
+  }
+  // Fallback to Telegram share if Web Share API not available
+  shareTelegram()
+}
 </script>
 
 <style scoped>
@@ -241,6 +305,16 @@ header {
   text-align: center;
   font-size: 1.1em;
   color: #555;
+}
+
+.brand {
+  gap: .5rem;
+}
+
+.brand-link {
+  font-size: 1.8rem;
+  text-decoration: none;
+  line-height: 1;
 }
 
 header strong {
@@ -342,6 +416,57 @@ input[type="checkbox"] {
   font-size: 0.9em;
   text-align: center;
   margin-top: 1rem;
+}
+
+/* Prominent Ready for next control */
+.ready-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  border: 2px solid #f1c40f;
+  border-radius: 10px;
+  background: #fff8e1; /* light attention background */
+  cursor: pointer;
+  font-size: 1.05em;
+  font-weight: 600;
+  user-select: none;
+  transition: background-color .2s ease, border-color .2s ease, transform .05s ease;
+}
+.ready-toggle:hover { background: #fff3cd; }
+.ready-toggle:active { transform: translateY(1px); }
+.ready-toggle input[type="checkbox"] {
+  width: 1.2em;
+  height: 1.2em;
+}
+.ready-toggle.active {
+  background: #2ecc71;
+  border-color: #27ae60;
+  color: #fff;
+}
+.ready-toggle.active .ready-text { color: #fff; }
+
+.share-actions button {
+  padding: 0.6rem 1rem;
+}
+
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0,0,0,0.15);
+  border-top-color: #007bff;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .results {
