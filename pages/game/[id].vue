@@ -34,8 +34,8 @@
         <button :class="{red: my.answer==='red'}" @click="choose('red')">🔴 No</button>
       </div>
 
-      <div class="row">
-        <textarea v-model="my.comment" rows="3" placeholder="Comment"></textarea>
+      <div class="row comment-section">
+        <textarea v-model="my.comment" rows="2" placeholder="Comment"></textarea>
       </div>
 
       <label class="ready-toggle" :class="{ active: my.ready }">
@@ -295,21 +295,56 @@ async function shareNative() {
 <style scoped>
 .container {
   max-width: 720px;
-  margin: 2rem auto;
+  margin: 1rem auto;
   display: grid;
-  gap: 1.5rem; /* Consistent gap */
-  padding: 2rem;
+  gap: 1.5rem;
+  padding: 1rem;
   background-color: #f9f9f9;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
+  min-height: calc(100vh - 2rem);
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .container {
+    margin: 0.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    gap: 1rem;
+    min-height: calc(100vh - 1rem);
+  }
 }
 
 header {
   text-align: center;
   font-size: 1.1em;
   color: #555;
+}
+
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+    font-size: 0.9em;
+  }
+  
+  header .row.between {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  header .brand {
+    justify-content: center;
+  }
+  
+  header .brand h1 {
+    font-size: 1.2em;
+    margin: 0;
+  }
 }
 
 .brand {
@@ -387,13 +422,43 @@ header strong {
 .choices button.green:hover { background: #27ae60; }
 .choices button.green.green { box-shadow: 0 0 0 3px #2ecc71; }
 
+@media (max-width: 768px) {
+  .choices {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+  
+  .choices button {
+    padding: 1rem;
+    font-size: 1.2em;
+    max-width: none;
+    margin-bottom: 0;
+    min-height: 50px;
+  }
+  
+  .card {
+    padding: 1rem;
+  }
+  
+  .card h2 {
+    font-size: 1.5em;
+    margin-bottom: 1rem;
+  }
+  
+  .card h3 {
+    font-size: 1.1em;
+    margin-bottom: 0.5rem;
+  }
+}
+
 textarea {
   width: 100%;
   padding: 0.8rem;
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 1em;
-  min-height: 80px; /* Smaller height for comment */
+  min-height: 40px; /* Even smaller height for comment */
   resize: vertical;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
   transition: border-color 0.3s ease;
@@ -511,6 +576,44 @@ tbody tr:nth-child(even) {
   background-color: #fcfcfc;
 }
 
+@media (max-width: 768px) {
+  .results {
+    padding: 1rem;
+    margin-top: 1rem;
+    overflow-x: auto;
+  }
+  
+  .results h3 {
+    font-size: 1.3em;
+    margin-bottom: 1rem;
+  }
+  
+  table {
+    font-size: 0.85em;
+    min-width: 500px;
+  }
+  
+  th, td {
+    padding: 0.5rem 0.3rem;
+    word-break: break-word;
+  }
+  
+  th:first-child, td:first-child {
+    width: 30px;
+    text-align: center;
+  }
+  
+  th:nth-child(2), td:nth-child(2) {
+    min-width: 120px;
+  }
+  
+  th:nth-child(3), td:nth-child(3),
+  th:nth-child(5), td:nth-child(5) {
+    width: 40px;
+    text-align: center;
+  }
+}
+
 footer {
   margin-top: 2rem;
   text-align: center;
@@ -572,5 +675,9 @@ footer span {
 
 .question-container {
   will-change: transform, opacity;
+}
+
+.comment-section {
+  margin-top: 1rem;
 }
 </style>
