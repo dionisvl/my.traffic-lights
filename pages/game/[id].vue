@@ -21,8 +21,12 @@
     </div>
 
     <section class="card" v-if="state.game.status === 'in_progress'">
-      <h3>Question #{{ state.game.currentQuestionIndex + 1 }}</h3>
-      <h2>{{ current.questionText }}</h2>
+      <Transition name="question-slide" mode="out-in">
+        <div :key="state.game.currentQuestionIndex" class="question-container">
+          <h3>Question #{{ state.game.currentQuestionIndex + 1 }}</h3>
+          <h2>{{ current.questionText }}</h2>
+        </div>
+      </Transition>
 
       <div class="choices">
         <button :class="{green: my.answer==='green'}" @click="choose('green')">🟢 Yes</button>
@@ -548,5 +552,25 @@ footer span {
 
 .status-indicator.offline {
   background-color: #e74c3c; /* Red */
+}
+
+/* Question transition animations */
+.question-slide-enter-active,
+.question-slide-leave-active {
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.question-slide-enter-from {
+  transform: translateY(-30px);
+  opacity: 0;
+}
+
+.question-slide-leave-to {
+  transform: translateY(30px);
+  opacity: 0;
+}
+
+.question-container {
+  will-change: transform, opacity;
 }
 </style>
