@@ -10,6 +10,9 @@ export default defineNuxtConfig({
   typescript: { strict: true },
   app: {
     head: {
+      meta: [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1.0, user-scalable=no' }
+      ],
       script: [
         { src: 'https://cdn.socket.io/4.7.2/socket.io.min.js', defer: true },
       ],
