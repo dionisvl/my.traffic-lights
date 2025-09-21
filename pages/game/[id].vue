@@ -96,7 +96,6 @@ const online = reactive({ p1: false, p2: false })
 
 const current = computed(() => state.value?.answers[state.value.game.currentQuestionIndex])
 const my = reactive({ answer: undefined as Answer | undefined, comment: '', ready: false })
-const partner = reactive({ answer: undefined as Answer | undefined, comment: '', ready: false })
 const isAdmin = computed(() => role.value === 'p1')
 
 
@@ -257,7 +256,8 @@ async function copyGameLink() {
   try {
     await navigator.clipboard.writeText(location.href)
     alert('Link copied')
-  } catch (e) {
+  } catch (err) {
+    console.warn('Clipboard access denied, falling back to prompt', err)
     // Fallback: open prompt if clipboard access denied
     prompt('Copy game link:', location.href)
   }
@@ -278,7 +278,8 @@ async function shareNative() {
     try {
       await navigator.share({ title, text, url })
       return
-    } catch (e) {
+    } catch (err) {
+      console.debug('Native share failed, falling back to Telegram share', err)
       // User cancelled or share failed; fall back below
     }
   }

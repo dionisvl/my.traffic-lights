@@ -148,6 +148,6 @@ describe('Snapshot shape', () => {
     assert.deepEqual(Object.keys(snapshot.game), ['id', 'status', 'currentQuestionIndex', 'total']);
     assert.deepEqual(Object.keys(snapshot.players.p1), ['online']);
     assert.equal(snapshot.answers.length, 2);
-    assert.deepEqual(Object.keys(snapshot.answers[0].player1), ['answer', 'comment']);
+    assert.deepEqual(Object.keys(snapshot.answers[0].player1), ['answer', 'comment', 'ready']);
   });
 });

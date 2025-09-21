@@ -1,10 +1,7 @@
 services:
   fe:
     build:
-      context: .
       target: dev
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=development
       - NUXT_PUBLIC_API_BASE=http://be:4000
@@ -12,47 +9,28 @@ services:
     volumes:
       - ./:/app
       - /app/node_modules
-    networks:
-      - app-network
-    depends_on:
-      - be
+    ports:
+      - "3000:3000"
     restart: unless-stopped
 
   be:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
       target: dev
-    ports:
-      - "4000:4000"
     environment:
+      - NODE_ENV=development
       - DATABASE_URL=postgresql://user:password@db:5432/game_db
     volumes:
       - ./:/app
       - /app/backend/node_modules
-    networks:
-      - app-network
-    depends_on:
-      - db
+    ports:
+      - "4000:4000"
     restart: unless-stopped
 
   db:
-    image: postgres:15-alpine
-    ports:
-      - "5432:5432"
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=game_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
+    ports:
+      - "5432:5432"
     restart: unless-stopped
-
-networks:
-  app-network:
-    driver: bridge
-
-volumes:
-  postgres_data:
