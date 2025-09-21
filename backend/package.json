@@ -2,10 +2,10 @@
   "name": "backend",
   "version": "1.0.0",
   "private": true,
-  "main": "dist/main.js",
+  "main": "../dist/backend/src/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/main.js",
+    "start": "node ../dist/backend/src/main.js",
     "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts"
   },
   "dependencies": {
@@ -27,4 +27,3 @@
     "typescript": "^5.1.3"
   }
 }
-
