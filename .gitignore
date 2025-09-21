@@ -18,3 +18,5 @@ dist
 backend/node_modules
 playwright-report
 test-results
+
+.env
