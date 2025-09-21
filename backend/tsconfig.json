@@ -3,13 +3,14 @@
     "target": "ES2020",
     "module": "commonjs",
     "declaration": false,
-    "outDir": "dist",
-    "rootDir": "src",
+    "outDir": "../dist",
+    "rootDir": "..",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "moduleResolution": "node",
     "types": ["node"],
+    "typeRoots": ["./types", "./node_modules/@types"],
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
@@ -17,4 +18,3 @@
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
-

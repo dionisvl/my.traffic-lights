@@ -5,13 +5,13 @@ This project is configured to deploy on the same server as the Laravel blog at `
 ## Quick Deployment
 
 1. **Setup environment variables:**
-   ```bash
+```bash
    cp .env.prod .env
    # Edit .env with your production values
    ```
 
 2. **Deploy:**
-   ```bash
+```bash
  ./deploy-prod.sh
   ```
   > Script combines `compose.base.yml` and `compose.prod.yml` to isolate production configuration from dev services.
