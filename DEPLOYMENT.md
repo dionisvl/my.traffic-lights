@@ -10,11 +10,11 @@ cp .env.prod .env
 # Edit .env with production values
 ```
 
-2. **Deploy**
+1. **Deploy**
 ```bash
 ./deploy-prod.sh
 ```
-   > The script combines `compose.base.yml` and `compose.prod.yml`, attaching the containers to the external Traefik network (`phpqaru-app-network` by default). If your Traefik network has a different name, update the `networks` section in `compose.prod.yml`.
+   > The script combines `compose.base.yml` and `compose.prod.yml`, attaching the containers to the existing Traefik network (`main_app-network` by default, override via `TRAEFIK_NETWORK`).
 
 ## Manual Deployment
 
@@ -35,7 +35,7 @@ docker compose -f compose.base.yml -f compose.prod.yml up -d --build
 
 ## Traefik Integration
 
-The new stack simply joins the external Docker network (`phpqaru-app-network`) already used by the Laravel project. The existing Traefik instance continues to provide:
+The new stack simply joins the external Docker network (`main_app-network` by default, override via `TRAEFIK_NETWORK`). The existing Traefik instance continues to provide:
 
 - Automatic SSL certificates via Let's Encrypt
 - HTTP→HTTPS redirection
@@ -61,8 +61,8 @@ docker logs -f phpqaru-traefik-1
 ## DNS
 
 Point these records to the server:
-- `tlg.site.example`
-- `api-tlg.site.example`
+- `tlg.<DOMAIN>` (or the fallback from compose)
+- `api-tlg.<DOMAIN>`
 
 ## Environment
 
