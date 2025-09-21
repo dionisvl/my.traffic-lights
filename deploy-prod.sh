@@ -16,14 +16,6 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# Ensure required directories exist
-echo "📁 Creating required directories..."
-mkdir -p letsencrypt logs/traefik
-
-# Secure acme.json file
-touch letsencrypt/acme.json
-chmod 600 letsencrypt/acme.json
-
 # Stop existing containers
 echo "🛑 Stopping existing containers..."
 ${COMPOSE_CMD} down --remove-orphans || true
@@ -54,12 +46,8 @@ echo ""
 echo "🌐 Services should be available at:"
 echo "   • Frontend: https://tlg.site.example"
 echo "   • Backend API: https://api-tlg.site.example"
-echo "   • Traefik Dashboard: https://traefik-tlg.site.example"
 echo ""
 echo "📋 Useful commands:"
-echo "   • View logs: docker compose -f compose.yml -f compose.prod.yml logs -f"
-echo "   • Stop services: docker compose -f compose.yml -f compose.prod.yml down"
-echo "   • Restart: docker compose -f compose.yml -f compose.prod.yml restart"
-echo ""
-echo "🔒 Note: SSL certificates will be automatically obtained from Let's Encrypt"
-echo "   This may take a few minutes on first run."
+echo "   • View logs: ${COMPOSE_CMD} logs -f"
+echo "   • Stop services: ${COMPOSE_CMD} down"
+echo "   • Restart: ${COMPOSE_CMD} restart"

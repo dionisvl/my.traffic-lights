@@ -1,24 +1,22 @@
 # Production Deployment Guide
 
-This project is configured to deploy on the same server as the Laravel blog at `site.example` using Traefik for routing and SSL management.
+This project deploys alongside the existing Laravel blog on `site.example` and **reuses the already running Traefik instance** for routing and SSL.
 
 ## Quick Deployment
 
-1. **Setup environment variables:**
+1. **Prepare environment variables**
 ```bash
-   cp .env.prod .env
-   # Edit .env with your production values
-   ```
+cp .env.prod .env
+# Edit .env with production values
+```
 
-2. **Deploy:**
+2. **Deploy**
 ```bash
- ./deploy-prod.sh
-  ```
-  > Script combines `compose.base.yml` and `compose.prod.yml` to isolate production configuration from dev services.
+./deploy-prod.sh
+```
+   > The script combines `compose.base.yml` and `compose.prod.yml`, attaching the containers to the external Traefik network (`phpqaru-app-network` by default). If your Traefik network has a different name, update the `networks` section in `compose.prod.yml`.
 
 ## Manual Deployment
-
-If you prefer manual control:
 
 ```bash
 # Stop existing containers
@@ -30,79 +28,66 @@ docker compose -f compose.base.yml -f compose.prod.yml up -d --build
 
 ## Services
 
-The production setup includes:
+- **Frontend** — `https://tlg.site.example` (Nuxt 3)
+- **Backend API** — `https://api-tlg.site.example` (NestJS + Socket.IO)
+- **Database** — PostgreSQL container (internal only)
+- **Traefik** — the pre-existing instance from the Laravel stack; no extra container is started here
 
-- **Frontend**: `https://tlg.site.example` (Nuxt.js application)
-- **Backend API**: `https://api-tlg.site.example` (NestJS with Socket.IO)
-- **Database**: PostgreSQL (internal)
-- **Traefik**: Reverse proxy with automatic SSL
-- **Traefik Dashboard**: `https://traefik-tlg.site.example`
+## Traefik Integration
 
-## Traefik Configuration
+The new stack simply joins the external Docker network (`phpqaru-app-network`) already used by the Laravel project. The existing Traefik instance continues to provide:
 
-The setup is based on the existing Traefik configuration from the Laravel blog project with:
-
-- **Automatic SSL** via Let's Encrypt
-- **HTTP to HTTPS redirect**
-- **Security headers** (HSTS, XSS protection, etc.)
-- **Rate limiting** on API endpoints
-- **Compression** for static assets
-- **WebSocket support** for Socket.IO
-
-## Key Features
-
-- ✅ Automatic SSL certificate management
-- ✅ HTTP/2 and HTTP/3 support
-- ✅ Security headers and rate limiting
-- ✅ WebSocket proxying for real-time features
-- ✅ Compression and performance optimization
-- ✅ Structured logging
+- Automatic SSL certificates via Let's Encrypt
+- HTTP→HTTPS redirection
+- Security headers (HSTS, XSS protection, etc.)
+- API rate limiting
+- Response compression
+- WebSocket proxying support
 
 ## Monitoring
 
-View logs:
 ```bash
 # All services
 docker compose -f compose.base.yml -f compose.prod.yml logs -f
 
-# Specific service
-docker compose -f compose.base.yml -f compose.prod.yml logs -f traefik
+# Individual containers
 docker compose -f compose.base.yml -f compose.prod.yml logs -f fe
 docker compose -f compose.base.yml -f compose.prod.yml logs -f be
+
+# Existing Traefik (Laravel stack)
+docker logs -f phpqaru-traefik-1
 ```
 
-## DNS Configuration
+## DNS
 
-Ensure these DNS records point to your server:
-- `tlg.site.example` → server IP
-- `api-tlg.site.example` → server IP  
-- `traefik-tlg.site.example` → server IP
+Point these records to the server:
+- `tlg.site.example`
+- `api-tlg.site.example`
 
-## Environment Variables
+## Environment
 
-Key production environment variables in `.env`:
+Important values in `.env`:
 
 ```bash
-# SSL/Email for Let's Encrypt
+# Let's Encrypt contact email
 ACME_EMAIL=admin@tlg.site.example
 
-# Database (change password!)
+# Database (change the password!)
 POSTGRES_PASSWORD=secure-password-here
 
-# Application URLs
+# Application endpoints
 NUXT_PUBLIC_API_BASE=https://api-tlg.site.example
 NUXT_PUBLIC_WS_URL=wss://api-tlg.site.example
 ```
 
 ## Backup
 
-Database backup:
 ```bash
 docker compose -f compose.base.yml -f compose.prod.yml exec db pg_dump -U user game_db > backup.sql
 ```
 
 ## Troubleshooting
 
-**SSL Issues**: Check Traefik logs and ensure ports 80/443 are open
-**WebSocket Issues**: Verify WebSocket connections work through Traefik
-**Service Discovery**: Ensure all services are on the same Docker network
+- **SSL issues** — inspect `docker logs -f phpqaru-traefik-1` to confirm Let's Encrypt renewals
+- **WebSocket issues** — verify both `fe` and `be` containers are attached to the Traefik network and their routers appear in `docker ps` output for Traefik
+- **Service discovery** — ensure every container in the stack joins the same external network as Traefik
