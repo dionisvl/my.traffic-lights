@@ -1,5 +1,7 @@
 .PHONY: help up down restart logs clean test e2e playwright playwright-docker
 
+COMPOSE_DEV = docker compose -f compose.base.yml -f compose.dev.yml
+
 help:
 	@echo "Traffic Lights Game - Docker Compose Commands"
 	@echo "  up               - Start all services (build if needed)"
@@ -13,21 +15,21 @@ help:
 	@echo "  playwright-docker - Run Playwright tests against Docker services"
 
 up:
-	docker compose up --build -d
+	$(COMPOSE_DEV) up --build -d
 
 down:
-	docker compose down
+	$(COMPOSE_DEV) down
 
 restart: down up
 
 logs:
-	docker compose logs -f
+	$(COMPOSE_DEV) logs -f
 
 clean:
-	docker compose down -v --rmi all --remove-orphans
+	$(COMPOSE_DEV) down -v --rmi all --remove-orphans
 
 test:
-	docker compose exec be npm test --prefix ..
+	$(COMPOSE_DEV) exec be npm test --prefix ..
 
 e2e:
 	npm run e2e

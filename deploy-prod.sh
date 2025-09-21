@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Production deployment script for tlg.site.example
-set -e
+set -euo pipefail
+
+COMPOSE_CMD="docker compose -f compose.base.yml -f compose.prod.yml"
 
 echo "🚀 Starting production deployment..."
 
@@ -24,19 +26,19 @@ chmod 600 letsencrypt/acme.json
 
 # Stop existing containers
 echo "🛑 Stopping existing containers..."
-docker compose -f compose.yml -f compose.prod.yml down --remove-orphans || true
+${COMPOSE_CMD} down --remove-orphans || true
 
 # Pull latest images
 echo "📥 Pulling latest base images..."
-docker compose -f compose.yml -f compose.prod.yml pull
+${COMPOSE_CMD} pull
 
 # Build production images
 echo "🔨 Building production images..."
-docker compose -f compose.yml -f compose.prod.yml build --no-cache
+${COMPOSE_CMD} build --no-cache
 
 # Start services
 echo "🎯 Starting production services..."
-docker compose -f compose.yml -f compose.prod.yml up -d
+${COMPOSE_CMD} up -d
 
 # Wait for services
 echo "⏳ Waiting for services to start..."
@@ -44,7 +46,7 @@ sleep 10
 
 # Show status
 echo "📊 Service status:"
-docker compose -f compose.yml -f compose.prod.yml ps
+${COMPOSE_CMD} ps
 
 echo ""
 echo "✅ Deployment complete!"

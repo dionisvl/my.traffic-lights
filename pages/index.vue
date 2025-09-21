@@ -76,7 +76,8 @@ async function loadFile(name: string) {
     const base = (config.public as any).apiBase || 'http://localhost:4000'
     const res = await $fetch<{ content: string }>(`${base}/questions/${encodeURIComponent(name)}`)
     raw.value = res.content || ''
-  } catch (e) {
+  } catch (err) {
+    console.error('Failed to load question file', err)
     alert('Failed to load file')
   }
 }

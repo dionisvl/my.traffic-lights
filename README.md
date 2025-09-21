@@ -15,7 +15,7 @@ Frontend runtime config:
 Backend uses `DATABASE_URL` to connect to Postgres. If not set, in‑memory repository is used.
 
 ## Docker Compose (frontend + backend + postgres)
-- Run: `docker compose up --build`
+- Run: `docker compose -f compose.base.yml -f compose.dev.yml up --build`
 - Frontend: `http://localhost:3000`
 - Backend (Nest): `http://localhost:4000`
 
@@ -39,6 +39,12 @@ E2E script now targets the Nest backend. It starts `npm run start:dev --prefix b
 - connects two Socket.IO clients, runs the flow, and polls `GET /game/:id`
 
 ## Playwright Tests
+**IMPORTANT: Backend and frontend MUST be running before running Playwright tests!**
+
+1. Start backend: `npm run dev:back` (port 4000)
+2. Start frontend: `npm run dev:front` (port 3000)
+3. Run tests: `npm run test:pw`
+
 To run the browser-based end-to-end tests, use one of these commands:
 
 **With Docker services:**

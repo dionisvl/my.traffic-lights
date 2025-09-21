@@ -12,9 +12,13 @@ async function setupTwoPlayerGame(context: BrowserContext, questions: string[]) 
 
   // Player 1 creates the game
   await player1Page.goto('/');
-  await player1Page.getByText("I'm 18+").locator('..').locator('input[type="checkbox"]').check();
+  await player1Page.locator('input[type="checkbox"]').check();
   await player1Page.getByPlaceholder('Enter questions, one per line').fill(questions.join('\n'));
-  await player1Page.getByRole('button', { name: 'Create Game' }).click();
+  
+  // Wait for the Create Game button to be enabled
+  const createButton = player1Page.getByRole('button', { name: 'Create Game' });
+  await expect(createButton).toBeEnabled();
+  await createButton.click();
   await expect(player1Page).toHaveURL(/\/game\/[a-f0-9-]+$/);
   const gameUrl = player1Page.url();
 
@@ -40,9 +44,13 @@ test.describe('Basic Game Flow', () => {
   test('should create a game and show the waiting state', async ({ page }) => {
     await page.goto('/');
     
-    await page.getByText("I'm 18+").locator('..').locator('input[type="checkbox"]').check();
+    await page.locator('input[type="checkbox"]').check();
     await page.getByPlaceholder('Enter questions, one per line').fill('Test question 1\nTest question 2');
-    await page.getByRole('button', { name: 'Create Game' }).click();
+    
+    // Wait for the Create Game button to be enabled
+    const createButton = page.getByRole('button', { name: 'Create Game' });
+    await expect(createButton).toBeEnabled();
+    await createButton.click();
     
     await expect(page).toHaveURL(/\/game\/[a-f0-9-]+$/);
     await expect(page.getByText('Waiting for the second player...')).not.toBeVisible();

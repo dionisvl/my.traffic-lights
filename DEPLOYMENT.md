@@ -12,8 +12,9 @@ This project is configured to deploy on the same server as the Laravel blog at `
 
 2. **Deploy:**
    ```bash
-   ./deploy-prod.sh
-   ```
+ ./deploy-prod.sh
+  ```
+  > Script combines `compose.base.yml` and `compose.prod.yml` to isolate production configuration from dev services.
 
 ## Manual Deployment
 
@@ -21,10 +22,10 @@ If you prefer manual control:
 
 ```bash
 # Stop existing containers
-docker compose -f compose.yml -f compose.prod.yml down
+docker compose -f compose.base.yml -f compose.prod.yml down
 
 # Build and start
-docker compose -f compose.yml -f compose.prod.yml up -d --build
+docker compose -f compose.base.yml -f compose.prod.yml up -d --build
 ```
 
 ## Services
@@ -62,12 +63,12 @@ The setup is based on the existing Traefik configuration from the Laravel blog p
 View logs:
 ```bash
 # All services
-docker compose -f compose.yml -f compose.prod.yml logs -f
+docker compose -f compose.base.yml -f compose.prod.yml logs -f
 
 # Specific service
-docker compose -f compose.yml -f compose.prod.yml logs -f traefik
-docker compose -f compose.yml -f compose.prod.yml logs -f fe
-docker compose -f compose.yml -f compose.prod.yml logs -f be
+docker compose -f compose.base.yml -f compose.prod.yml logs -f traefik
+docker compose -f compose.base.yml -f compose.prod.yml logs -f fe
+docker compose -f compose.base.yml -f compose.prod.yml logs -f be
 ```
 
 ## DNS Configuration
@@ -97,7 +98,7 @@ NUXT_PUBLIC_WS_URL=wss://api-tlg.site.example
 
 Database backup:
 ```bash
-docker compose -f compose.yml -f compose.prod.yml exec db pg_dump -U user game_db > backup.sql
+docker compose -f compose.base.yml -f compose.prod.yml exec db pg_dump -U user game_db > backup.sql
 ```
 
 ## Troubleshooting
