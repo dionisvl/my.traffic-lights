@@ -4,8 +4,8 @@ services:
       target: prod
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE:-https://api-tlg.site.example}
-      - NUXT_PUBLIC_WS_URL=${NUXT_PUBLIC_WS_URL:-wss://api-tlg.site.example}
+      - NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE:-https://api-tlg.${DOMAIN:-site.example}}
+      - NUXT_PUBLIC_WS_URL=${NUXT_PUBLIC_WS_URL:-wss://api-tlg.${DOMAIN:-site.example}}
     expose:
       - "3000"
     volumes:
@@ -14,11 +14,11 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.front-http.rule=Host(`tlg.site.example`)"
+      - "traefik.http.routers.front-http.rule=Host(`tlg.${DOMAIN:-site.example}`)"
       - "traefik.http.routers.front-http.entrypoints=web"
       - "traefik.http.routers.front-http.middlewares=front-https-redirect"
       - "traefik.http.middlewares.front-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.front.rule=Host(`tlg.site.example`)"
+      - "traefik.http.routers.front.rule=Host(`tlg.${DOMAIN:-site.example}`)"
       - "traefik.http.routers.front.entrypoints=websecure"
       - "traefik.http.routers.front.tls.certresolver=myresolver"
       - "traefik.http.services.front.loadbalancer.server.port=3000"
@@ -50,11 +50,11 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api-http.rule=Host(`api-tlg.site.example`)"
+      - "traefik.http.routers.api-http.rule=Host(`api-tlg.${DOMAIN:-site.example}`)"
       - "traefik.http.routers.api-http.entrypoints=web"
       - "traefik.http.routers.api-http.middlewares=api-https-redirect"
       - "traefik.http.middlewares.api-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.api.rule=Host(`api-tlg.site.example`)"
+      - "traefik.http.routers.api.rule=Host(`api-tlg.${DOMAIN:-site.example}`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=myresolver"
       - "traefik.http.services.api.loadbalancer.server.port=4000"
@@ -84,7 +84,7 @@ services:
 networks:
   app-network:
     external: true
-    name: phpqaru_app-network
+    name: ${TRAEFIK_NETWORK:-main_app-network}
 
 volumes:
   postgres_data:
