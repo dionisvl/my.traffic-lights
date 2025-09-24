@@ -79,7 +79,8 @@ export class GameGateway {
     const role = ((socket.data||{}).role || 'p1') as Role
     try {
       await submitComment(body.gameId, role, body.questionIndex, body.comment)
-      socket.to(this.room(body.gameId)).emit('comment_received', { questionIndex: body.questionIndex, player: role })
+      // Notify all players including the author about comment change
+      this.io.to(this.room(body.gameId)).emit('comment_received', { questionIndex: body.questionIndex, player: role })
     } catch (e: any) {
       socket.emit('error', { code: 'comment_failed', message: e?.message || 'comment failed' })
     }

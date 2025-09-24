@@ -183,7 +183,7 @@ watch(() => my.answer, () => {
   }
 })
 
-watch(() => my.comment, (v) => { 
+watch(() => my.comment, (v) => {
   if (state.value?.game.status==='in_progress') {
     emit('submit_comment', { comment: v })
     // Optimistically update local snapshot so table reflects my comment immediately
@@ -197,8 +197,11 @@ watch(() => my.comment, (v) => {
       }
     }
   }
-  // Removed: Reset ready when comment changes
-  // if (my.ready) my.ready = false
+  // Reset ready when comment changes to stay in sync with server
+  if (my.ready) {
+    my.ready = false
+    emit('ready_next', { ready: false })
+  }
 })
 
 function handleReadyChange(event: Event) {
