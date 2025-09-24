@@ -45,7 +45,9 @@
 
       <div class="hint">
         <template v-if="partnerReady">
-          <span>Partner is ready</span>
+          <div class="partner-status">
+            <span>Partner: {{ getAnswerEmoji(partnerQA.answer) }} <span v-if="partnerQA.comment" class="partner-comment">{{ partnerQA.comment }}</span></span>
+          </div>
         </template>
         <template v-else>
           <span class="spinner" aria-label="waiting"></span>
@@ -682,5 +684,22 @@ footer span {
 
 .comment-section {
   margin-top: 1rem;
+}
+
+.partner-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.partner-comment {
+  font-style: italic;
+  color: #555;
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  max-width: 300px;
+  word-wrap: break-word;
 }
 </style>

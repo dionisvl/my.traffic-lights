@@ -255,8 +255,8 @@ test.describe('Basic Game Flow', () => {
     // Player 1 marks ready
     await player1Page.getByLabel('Ready for next').check();
     
-    // Player 2 should now see "Partner is ready"
-    await expect(player2Page.getByText('Partner is ready')).toBeVisible();
+    // Player 2 should now see partner's answer (🟢) instead of "Partner is ready"
+    await expect(player2Page.getByText('Partner: 🟢')).toBeVisible();
     await expect(player2Page.locator('.spinner')).not.toBeVisible();
     
     // Player 1 should still see spinner since Player 2 is not ready yet

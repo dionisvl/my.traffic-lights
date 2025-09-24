@@ -48,8 +48,8 @@ test.describe('Ready State Synchronization Bug Fix', () => {
     await p1ReadyCheckbox.check();
     await expect(p1ReadyCheckbox).toBeChecked();
 
-    // Player 2 should see "Partner is ready" since Player 1 is ready
-    await expect(player2Page.getByText('Partner is ready')).toBeVisible();
+    // Player 2 should see partner's answer (🟢) since Player 1 is ready
+    await expect(player2Page.getByText('Partner: 🟢')).toBeVisible();
 
     // Player 1 starts typing a comment - this should reset their ready state
     const commentBox = player1Page.getByPlaceholder('Comment');
@@ -73,8 +73,8 @@ test.describe('Ready State Synchronization Bug Fix', () => {
     await player1Page.getByRole('button', { name: '🟢 Yes' }).click();
     await p1ReadyCheckbox.check();
 
-    // Player 2 should see "Partner is ready" after Player 1 marks ready
-    await expect(player2Page.getByText('Partner is ready')).toBeVisible();
+    // Player 2 should see partner's answer (🟢) after Player 1 marks ready
+    await expect(player2Page.getByText('Partner: 🟢')).toBeVisible();
 
     // Player 1 adds a comment - should reset their ready state
     await player1Page.getByPlaceholder('Comment').fill('Green is nice');
@@ -106,8 +106,8 @@ test.describe('Ready State Synchronization Bug Fix', () => {
     await player1Page.getByRole('button', { name: '🟢 Yes' }).click();
     await p1ReadyCheckbox.check();
 
-    // Player 2 should see "Partner is ready"
-    await expect(player2Page.getByText('Partner is ready')).toBeVisible();
+    // Player 2 should see partner's answer (🟢)
+    await expect(player2Page.getByText('Partner: 🟢')).toBeVisible();
 
     // Rapid comment editing
     await p1CommentBox.fill('First thought');
@@ -125,6 +125,6 @@ test.describe('Ready State Synchronization Bug Fix', () => {
 
     // Player 1 can still mark ready after editing
     await p1ReadyCheckbox.check();
-    await expect(player2Page.getByText('Partner is ready')).toBeVisible();
+    await expect(player2Page.getByText('Partner: 🟢')).toBeVisible();
   });
 });
