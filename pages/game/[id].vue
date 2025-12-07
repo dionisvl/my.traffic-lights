@@ -1,6 +1,6 @@
 <template>
   <main class="container" v-if="state">
-    <header class="row between">
+    <header class="row">
       <div class="brand row">
         <a href="/" target="_blank" rel="noopener" aria-label="Open home in new tab" class="brand-link">🚦</a>
         <h1>Traffic Lights Game</h1>
@@ -11,13 +11,18 @@
       </span>
     </header>
 
-    <div class="row between">
+    <div class="row">
       <span v-if="state.game.status==='waiting' && !isAdmin">Waiting for game to start...</span>
       <span v-if="state.game.status==='waiting' && isAdmin && !online.p2">Waiting for Player 2 to connect. Once Player 2 is online, you can start the game.</span>
     </div>
-    <div class="row share-actions" v-if="state.game.status==='waiting' && isAdmin">
-      <button @click="shareNative">Share…</button>
-      <button @click="copyGameLink">Copy link</button>
+    <div class="share-actions" v-if="state.game.status==='waiting' && isAdmin">
+      <div class="link-share">
+        <input type="text" :value="gameLink" readonly class="link-input" />
+        <button @click="copyGameLink" class="copy-btn">Copy link</button>
+        <button @click="shareNative" class="share-btn">Share…</button>
+      </div>
+      <div class="copy-feedback" v-if="linkCopied">the link is copied</div>
+
     </div>
 
     <section class="card" v-if="state.game.status === 'in_progress'">
@@ -74,9 +79,9 @@
           <tr v-for="(answer, idx) in answeredQuestions" :key="idx">
             <td>{{ answer.questionIndex + 1 }}</td>
             <td>{{ answer.questionText }}</td>
-            <td>{{ getAnswerEmoji(answer.player1.answer) }}</td>
+            <td>{{ getAnswerEmoji(answer.player1.answer) }} {{ getAnswerText(answer.player1.answer) }}</td>
             <td>{{ answer.player1.comment || '' }}</td>
-            <td>{{ getAnswerEmoji(answer.player2.answer) }}</td>
+            <td>{{ getAnswerEmoji(answer.player2.answer) }} {{ getAnswerText(answer.player2.answer) }}</td>
             <td>{{ answer.player2.comment || '' }}</td>
           </tr>
         </tbody>
@@ -84,7 +89,7 @@
     </section>
 
 
-    <footer class="row between">
+    <footer class="row">
       <button v-if="isAdmin && state.game.status==='waiting'" @click="start">Start Game</button>
       <span v-else-if="state.game.status==='completed'">Game completed - all questions have been answered</span>
     </footer>
@@ -103,6 +108,8 @@ const online = reactive({ p1: false, p2: false })
 const current = computed(() => state.value?.answers[state.value.game.currentQuestionIndex])
 const my = reactive({ answer: undefined as Answer | undefined, comment: '', ready: false })
 const isAdmin = computed(() => role.value === 'p1')
+const gameLink = computed(() => typeof window !== 'undefined' ? window.location.href : '')
+const linkCopied = ref(false)
 
 
 // Partner status derived from server snapshot so hint and spinner are accurate
@@ -246,8 +253,17 @@ function emit(event: string, extra: any) {
 function getAnswerEmoji(answer: string) {
   switch (answer) {
     case 'red': return '🔴'
-    case 'yellow': return '🟡'  
+    case 'yellow': return '🟡'
     case 'green': return '🟢'
+    default: return ''
+  }
+}
+
+function getAnswerText(answer: string) {
+  switch (answer) {
+    case 'red': return 'no'
+    case 'yellow': return 'maybe'
+    case 'green': return 'yes'
     default: return ''
   }
 }
@@ -264,7 +280,10 @@ async function refresh() {
 async function copyGameLink() {
   try {
     await navigator.clipboard.writeText(location.href)
-    alert('Link copied')
+    linkCopied.value = true
+    setTimeout(() => {
+      linkCopied.value = false
+    }, 2000)
   } catch (err) {
     console.warn('Clipboard access denied, falling back to prompt', err)
     // Fallback: open prompt if clipboard access denied
@@ -309,7 +328,7 @@ async function shareNative() {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
-  min-height: calc(100vh - 2rem);
+  min-height: calc(40vh - 2rem);
   box-sizing: border-box;
 }
 
@@ -319,7 +338,7 @@ async function shareNative() {
     padding: 1rem;
     border-radius: 8px;
     gap: 1rem;
-    min-height: calc(100vh - 1rem);
+    min-height: calc(40vh - 1rem);
   }
 }
 
@@ -523,8 +542,81 @@ input[type="checkbox"] {
 }
 .ready-toggle.active .ready-text { color: #fff; }
 
-.share-actions button {
+.share-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.link-share {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+.link-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.85em;
+  background-color: #f9f9f9;
+  color: #555;
+  min-width: 0;
+}
+
+.copy-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9em;
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
+}
+
+.copy-btn:hover {
+  background-color: #0056b3;
+}
+
+.copy-feedback {
+  color: #2ecc71;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.share-btn {
   padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #6c757d;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.share-btn:hover {
+  background-color: #5a6268;
+}
+
+@media (max-width: 768px) {
+  .link-share {
+    max-width: 100%;
+  }
+
+  .link-input {
+    font-size: 0.8em;
+  }
+
+  .copy-btn {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85em;
+  }
 }
 
 

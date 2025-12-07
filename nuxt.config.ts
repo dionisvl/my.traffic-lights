@@ -8,6 +8,11 @@ export default defineNuxtConfig({
     },
   },
   typescript: { strict: true },
+  vite: {
+    server: {
+      allowedHosts: true,
+    },
+  },
   app: {
     head: {
       meta: [

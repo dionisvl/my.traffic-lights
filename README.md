@@ -21,6 +21,20 @@ Backend uses `DATABASE_URL` to connect to Postgres. If not set, in‑memory repo
 
 In `compose.yml` frontend gets `NUXT_PUBLIC_API_BASE=http://backend:4000` and `NUXT_PUBLIC_WS_URL=http://backend:4000`.
 
+## Production Deployment
+```bash
+./deploy-prod.sh
+```
+Auto-deploy script that:
+1. Creates `.env` from `.env.prod` template (if missing)
+2. Builds Docker images for frontend & backend
+3. Starts services via `docker compose -f compose.base.yml -f compose.prod.yml`
+
+Before first deploy, edit `.env.prod` and set:
+- `DOMAIN` - your domain
+- `POSTGRES_PASSWORD` - secure password
+- `ACME_EMAIL` - for SSL certificates
+
 ## Database
 - Env: `DATABASE_URL=postgresql://user:password@localhost:5432/game_db`
 - Schema is created automatically on first access (see `backend/src/repo/pg_normalized.ts`). No separate migrations for MVP.
