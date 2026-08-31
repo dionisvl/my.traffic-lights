@@ -10,7 +10,7 @@ echo "🚀 Starting production deployment..."
 # Check if .env file exists
 if [ ! -f .env ]; then
     echo "⚠️  .env file not found. Creating from template..."
-    cp .env.prod .env
+    cp .env.prod.example .env
     echo "📝 Please edit .env file with your production values"
     echo "   Especially change the database password and email!"
     exit 1

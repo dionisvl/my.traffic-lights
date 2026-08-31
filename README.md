@@ -26,11 +26,11 @@ In `compose.yml` frontend gets `NUXT_PUBLIC_API_BASE=http://backend:4000` and `N
 ./deploy-prod.sh
 ```
 Auto-deploy script that:
-1. Creates `.env` from `.env.prod` template (if missing)
+1. Creates `.env` from `.env.prod.example` template (if missing)
 2. Builds Docker images for frontend & backend
 3. Starts services via `docker compose -f compose.base.yml -f compose.prod.yml`
 
-Before first deploy, edit `.env.prod` and set:
+Before first deploy, create `.env` from `.env.prod.example` and set:
 - `DOMAIN` - your domain
 - `POSTGRES_PASSWORD` - secure password
 - `ACME_EMAIL` - for SSL certificates

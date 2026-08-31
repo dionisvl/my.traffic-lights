@@ -6,7 +6,7 @@ This project deploys alongside the existing Laravel blog on `site.example` and *
 
 1. **Prepare environment variables**
 ```bash
-cp .env.prod .env
+cp .env.prod.example .env
 # Edit .env with production values
 ```
 
