@@ -1,6 +1,6 @@
 # Frontend multi-stage Dockerfile (dev + prod)
 
-FROM node:20-alpine AS base
+FROM node:24-alpine AS base
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -21,7 +21,7 @@ ENV NODE_ENV=production
 RUN npm run nuxt:build
 
 # --- Prod runtime ---
-FROM node:20-alpine AS prod
+FROM node:24-alpine AS prod
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/.output ./.output

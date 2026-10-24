@@ -71,7 +71,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:15-alpine
+    image: postgres:15.19-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
