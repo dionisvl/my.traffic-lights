@@ -26,6 +26,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/.output ./.output
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# npm is only needed to install; drop it so its bundled deps are not shipped
+RUN npm ci --omit=dev && npm cache clean --force \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 EXPOSE 3000
 CMD ["node", ".output/server/index.mjs"]
