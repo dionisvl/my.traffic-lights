@@ -9,7 +9,7 @@ import {
   setReady,
   toSnapshot,
   toPlayerView,
-} from '../game.ts';
+} from '../src/lib/game/domain.ts';
 
 function unwrap(res) {
   assert.equal(res.ok, true, `Expected ok, got error: ${JSON.stringify(res.error)}`);

@@ -11,7 +11,14 @@ flowchart TD
     App <--> DB[("DB PostgreSQL")]
 ```
 
-The game engine (`kit/game.ts`) handles rules and returns a player-specific view used by both HTTP and Socket.IO. The repository persists game state in PostgreSQL. Socket presence and the per-game command queue live in the app process, so the current deployment runs **one app replica**.
+### Code organization
+
+Features own their code under `kit/src/lib/`:
+
+- `game/`: rules, player-specific state, UI, HTTP and Socket.IO handlers, and PostgreSQL persistence.
+- `questions/`: the read-only question-file endpoint.
+
+`kit/src/routes/` contains thin SvelteKit page entries. `kit/server.mjs` wires the features to one HTTP listener and owns startup and shutdown. Code in each feature's `server/` directory is server-only. Game presence and command serialization are process-local, so deploy one app replica.
 
 ## Production
 

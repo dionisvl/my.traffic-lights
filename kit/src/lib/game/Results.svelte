@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { AnswerRow, VisibleAnswer } from '../../game.ts';
+  import type { AnswerRow, VisibleAnswer } from './domain.ts';
   let { answers = [] }: { answers?: AnswerRow[] } = $props();
   const labels = { green: '🟢 Yes', yellow: '🟡 Maybe', red: '🔴 No' };
 </script>
