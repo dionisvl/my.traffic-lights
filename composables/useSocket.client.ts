@@ -1,3 +1,5 @@
+import { io } from 'socket.io-client'
+
 export type ClientSocket = ReturnType<typeof useSocket>['socket']
 
 const _socket = shallowRef<any | null>(null)
@@ -6,8 +8,6 @@ const _role = shallowRef<'p1' | 'p2' | null>(null)
 export function useSocket() {
   function connect() {
     if (_socket.value) return _socket.value
-    const io = (window as any).io || (globalThis as any).io
-    if (!io) return null
     const config = useRuntimeConfig()
     const url = (config.public as any).wsUrl || 'http://localhost:4000'
     _socket.value = io(url, { path: '/socket.io', transports: ['websocket'] })

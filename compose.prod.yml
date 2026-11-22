@@ -1,5 +1,6 @@
 services:
   fe:
+    image: ${TLG_FE_IMAGE:-tlg-fe:node26-socket-local}
     build:
       target: prod
     environment:
@@ -36,11 +37,13 @@ services:
     restart: unless-stopped
 
   be:
+    image: ${TLG_BE_IMAGE:-tlg-be:node26-db-role}
     build:
       target: prod
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL:-postgresql://user:password@tlg-db:5432/game_db}
+      - DATABASE_URL=${DATABASE_URL:?set DATABASE_URL}
+      - DATABASE_MANAGED_SCHEMA=true
       - QUESTIONS_DIR=${QUESTIONS_DIR:-/app/questions}
     expose:
       - "4000"
@@ -71,13 +74,13 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:15.19-alpine
+    image: postgres:19.0-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-game_db}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres19_data:/var/lib/postgresql
     # Keep the database off the shared Traefik network: other stacks there also use the "db" alias.
     networks: !override
       internal:
@@ -92,4 +95,4 @@ networks:
   internal: {}
 
 volumes:
-  postgres_data:
+  postgres19_data:
