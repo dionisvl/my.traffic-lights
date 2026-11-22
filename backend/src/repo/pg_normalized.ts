@@ -12,6 +12,11 @@ export function createPgNormalizedRepo(url: string): Repo {
     }
     if (!ready) {
       ready = (async () => {
+        if (process.env.DATABASE_MANAGED_SCHEMA === 'true') {
+          await pool.query('SELECT id FROM public.games LIMIT 0')
+          await pool.query('SELECT id FROM public.game_answers LIMIT 0')
+          return
+        }
         await pool.query(`
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'answer_color') THEN

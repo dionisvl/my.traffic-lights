@@ -1,6 +1,8 @@
-// Nuxt 3 config (frontend only). Backend is external NestJS.
+// Nuxt 4 config (frontend only). Backend is external NestJS.
 export default defineNuxtConfig({
-  devtools: { enabled: true },
+  srcDir: ".",
+  dir: { public: "public" },
+  devtools: { enabled: false },
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:4000',
@@ -17,9 +19,6 @@ export default defineNuxtConfig({
     head: {
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0, user-scalable=no' }
-      ],
-      script: [
-        { src: 'https://cdn.socket.io/4.7.2/socket.io.min.js', defer: true },
       ],
     },
   },

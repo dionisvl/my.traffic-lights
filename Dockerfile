@@ -1,6 +1,6 @@
 # Frontend multi-stage Dockerfile (dev + prod)
 
-FROM node:24-alpine AS base
+FROM node:26.13.1-alpine AS base
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -21,7 +21,7 @@ ENV NODE_ENV=production
 RUN npm run nuxt:build
 
 # --- Prod runtime ---
-FROM node:24-alpine AS prod
+FROM node:26.13.1-alpine AS prod
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/.output ./.output
@@ -30,4 +30,5 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force \
     && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 EXPOSE 3000
+USER node
 CMD ["node", ".output/server/index.mjs"]
