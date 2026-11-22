@@ -14,9 +14,16 @@
     } catch(e) { error=e instanceof Error ? e.message : String(e); } finally { busy=false; }
   }
 </script>
-<svelte:head><title>Traffic Lights — Create Game</title></svelte:head>
+<svelte:head><title>Traffic Lights Game</title></svelte:head>
 <main class="container">
-  <h1>Traffic Lights — Create Game</h1>
+  <div class="intro">
+    <h1>Traffic Lights Game</h1>
+    <p><strong>A realtime two-player game for couples and friends.</strong></p>
+    <p>Create a game and share the invite link. Answer the same questions with 🟢 Yes, 🟡 Maybe, or 🔴 No. Compare your answers after each round and talk about what surprised you.</p>
+  </div>
+  <aside class="privacy" aria-label="Privacy">
+    <strong>No account required.</strong> The game saves your questions, answers, comments, and a generated player ID so you can resume and view results. Please don’t enter sensitive or identifying information.
+  </aside>
   <label class="row"><input type="checkbox" bind:checked={adult} /> I'm 18+</label>
   <textarea bind:value={raw} rows="8" placeholder="Enter questions, one per line"></textarea>
   {#if files.length}<div class="server-files">Or pick from server files: <div class="row wrap">{#each files as f (f.name)}<button class="secondary" onclick={() => load(f.name)}>{f.name}</button>{/each}</div></div>{/if}
@@ -43,6 +50,15 @@ h1 {
   text-align: center;
   color: #2c3e50;
   font-size: 2.2em;
+}
+
+.intro h1 { margin: 0 0 .65rem; }
+.intro p { margin: .35rem 0 0; line-height: 1.5; }
+.privacy {
+  padding: .75rem 1rem;
+  border-radius: 8px;
+  background: #e9ecef;
+  line-height: 1.5;
 }
 
 .row {

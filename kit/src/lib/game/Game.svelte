@@ -67,6 +67,9 @@
   {#if snapshot}<span><b>P1:</b> {snapshot.players.p1.online?'Online':'Offline'} · <b>P2:</b> {snapshot.players.p2.online?'Online':'Offline'}</span>{/if}</header>
   {#if !joined && !error && snapshot?.game.status!=='in_progress'}<p role="status">{snapshot ? 'Reconnecting…' : 'Connecting…'}</p>{/if}
   {#if error}<p role="alert">{error}</p>{/if}
+  {#if !snapshot || snapshot.game.status==='waiting'}
+    <p>A realtime two-player game for couples and friends. Answer the same questions with 🟢 Yes, 🟡 Maybe, or 🔴 No. Compare your answers after each round and talk about what surprised you.</p>
+  {/if}
   {#if snapshot?.game.status==='waiting'}
     {#if snapshot.role==='p1'}
       {#if !snapshot.players.p2.online}<p>Waiting for Player 2 to connect. Once Player 2 is online, you can start the game.</p>{/if}

@@ -1,8 +1,10 @@
 # Traffic Lights Game
 
-SvelteKit and Socket.IO share one Node.js service. PostgreSQL runs on a separate Docker network from Traefik; only the app connects to both networks.
+**Realtime two-player game for couples and friends.** Invite someone, answer the same questions with 🟢 Yes, 🟡 Maybe, or 🔴 No, and compare your answers after each round. When your answers differ, talk about why.
 
 ## Architecture
+
+SvelteKit and Socket.IO share one Node.js service. PostgreSQL runs on a separate Docker network from Traefik; only the app connects to both networks.
 
 ```mermaid
 flowchart TD
