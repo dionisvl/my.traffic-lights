@@ -42,13 +42,7 @@ async function transaction(fn) {
 }
 const online = (id, role) => [...(io.sockets.adapter.rooms.get(room(id)) ?? [])].some(socketId => io.sockets.sockets.get(socketId)?.data.role===role);
 function view(state, role) {
-  const snapshot=game.toSnapshot(state);
-  for (const p of ['p1','p2']) snapshot.players[p].online=online(state.id,p);
-  return {...snapshot,role,answers:snapshot.answers.filter(a=>a.questionIndex<=state.currentQuestionIndex).map(a=>{
-    const other=role==='p1'?'player2':'player1';
-    if(state.status!=='completed' && a.questionIndex===state.currentQuestionIndex) return {...a,[other]:{ready:a[other].ready}};
-    return a;
-  })};
+  return game.toPlayerView(state, role, { p1: online(state.id, 'p1'), p2: online(state.id, 'p2') });
 }
 const questionName = name => /^[^/\\]+\.(txt|md)$/i.test(name) && !name.startsWith('.') && !name.includes('\0');
 async function body(req) {

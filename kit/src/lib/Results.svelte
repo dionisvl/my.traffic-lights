@@ -1,11 +1,12 @@
-<script>
-  let { answers = [] } = $props();
+<script lang="ts">
+  import type { AnswerRow, VisibleAnswer } from '../../game.ts';
+  let { answers = [] }: { answers?: AnswerRow[] } = $props();
   const labels = { green: '🟢 Yes', yellow: '🟡 Maybe', red: '🔴 No' };
 </script>
 
-{#snippet player(label, entry)}
+{#snippet player(label: string, entry: VisibleAnswer)}
   <span class="mobile-label" aria-hidden="true">{label}</span>
-  <span class="answer">{labels[entry.answer] ?? '—'}</span>
+  <span class="answer">{entry.answer ? labels[entry.answer] : '—'}</span>
   {#if entry.comment}<p class="comment">{entry.comment}</p>{/if}
 {/snippet}
 

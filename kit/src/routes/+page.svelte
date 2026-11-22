@@ -1,17 +1,17 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { api } from '#lib/client.js';
-  let adult=$state(false), raw=$state(''), files=$state([]), error=$state(''), busy=$state(false);
+  let adult=$state(false), raw=$state(''), files=$state<{ name: string }[]>([]), error=$state(''), busy=$state(false);
   onMount(() => { api('/api/questions').then(data => files=data.files).catch(e => error=e.message); });
-  async function load(name) { try { raw=(await api('/api/questions/'+encodeURIComponent(name))).content; error=''; } catch(e) { error=e.message; } }
+  async function load(name: string) { try { raw=(await api('/api/questions/'+encodeURIComponent(name))).content; error=''; } catch(e) { error=e instanceof Error ? e.message : String(e); } }
   async function create() {
     if (!adult || busy || !raw.trim()) return;
     busy=true; error='';
     try {
       const {gameId}=await api('/api/game',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({questions:raw.split('\n').map(x=>x.trim()).filter(Boolean)})});
       await goto('/game/'+gameId);
-    } catch(e) { error=e.message; } finally { busy=false; }
+    } catch(e) { error=e instanceof Error ? e.message : String(e); } finally { busy=false; }
   }
 </script>
 <svelte:head><title>Traffic Lights — Create Game</title></svelte:head>
@@ -92,7 +92,6 @@ button {
   gap: .5rem;
 }
 
-.muted { color: #666; font-size: .9em; }
 
 button:hover {
   background-color: #0056b3;
@@ -112,28 +111,8 @@ input[type="checkbox"] {
   accent-color: #007bff;
 }
 
-p.row {
-  background-color: #e9ecef;
-  padding: 0.8rem 1.2rem;
-  border-radius: 8px;
-  word-break: break-all;
-  font-size: 0.95em;
-  color: #555;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-}
 
-p.row span {
-  flex-grow: 1;
-}
 
-.row NuxtLink {
-  color: #007bff;
-  text-decoration: none;
-  font-weight: bold;
-}
 
-.row NuxtLink:hover {
-  text-decoration: underline;
-}
 
 </style>

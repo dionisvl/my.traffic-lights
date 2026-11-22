@@ -15,6 +15,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 26.13.1
+      - name: Install app and test dependencies
+        working-directory: kit
+        run: npm ci
+      - name: Check Svelte and TypeScript
+        working-directory: kit
+        run: npm run check
       - run: node --test kit/test/game.test.mjs
       - name: Generate temporary database credentials
         shell: bash
@@ -29,7 +35,6 @@ jobs:
       - name: Run Playwright browser test
         working-directory: kit
         run: |
-          npm ci
           npx playwright install --with-deps chromium
           npm run test:e2e
       - if: always()

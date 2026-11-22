@@ -199,3 +199,26 @@ export function toSnapshot(state: GameState) {
     })),
   } as const;
 }
+
+type Snapshot = ReturnType<typeof toSnapshot>;
+export type VisibleAnswer = Pick<PlayerQA, 'answer' | 'comment' | 'ready'>;
+export type AnswerRow = Pick<Snapshot['answers'][number], 'questionIndex' | 'questionText'> & {
+  player1: VisibleAnswer;
+  player2: VisibleAnswer;
+};
+export type GameView = Omit<Snapshot, 'answers'> & { role: Player; answers: AnswerRow[] };
+
+export function toPlayerView(state: GameState, role: Player, online: Record<Player, boolean>): GameView {
+  const snapshot = toSnapshot(state);
+  const other = role === 'p1' ? 'player2' : 'player1';
+  return {
+    ...snapshot,
+    role,
+    players: { p1: { online: online.p1 }, p2: { online: online.p2 } },
+    answers: snapshot.answers.slice(0, state.currentQuestionIndex + 1).map(row =>
+      state.status !== 'completed' && row.questionIndex === state.currentQuestionIndex
+        ? { ...row, [other]: { ready: row[other].ready } }
+        : row,
+    ),
+  };
+}

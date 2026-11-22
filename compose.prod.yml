@@ -43,7 +43,7 @@ services:
     image: postgres:19.0-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-user}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB:-game_db}
     volumes:
       - postgres19_data:/var/lib/postgresql

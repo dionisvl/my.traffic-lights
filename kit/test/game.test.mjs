@@ -8,6 +8,7 @@ import {
   submitComment,
   setReady,
   toSnapshot,
+  toPlayerView,
 } from '../game.ts';
 
 function unwrap(res) {
@@ -150,4 +151,24 @@ describe('Snapshot shape', () => {
     assert.equal(snapshot.answers.length, 2);
     assert.deepEqual(Object.keys(snapshot.answers[0].player1), ['answer', 'comment', 'ready']);
   });
+});
+
+
+it('projects completed rounds and hides the current partner answer and comment', () => {
+  let state = unwrap(createGame('g', ['First', 'Second', 'Third']));
+  state = { ...state, status: 'in_progress', currentQuestionIndex: 1 };
+  for (const [index, round] of state.answers.entries()) {
+    round.p1 = { answer: 'green', comment: `P1 ${index}`, ready: true };
+    round.p2 = { answer: 'red', comment: `P2 ${index}`, ready: false };
+  }
+  const one = toPlayerView(state, 'p1', { p1: true, p2: false });
+  const two = toPlayerView(state, 'p2', { p1: true, p2: false });
+  assert.deepEqual(one.answers.map(row => row.questionIndex), [0, 1]);
+  assert.deepEqual(one.answers[1].player2, { ready: false });
+  assert.equal(one.answers[1].player1.comment, 'P1 1');
+  assert.deepEqual(two.answers[1].player1, { ready: true });
+  assert.equal(two.answers[0].player1.comment, 'P1 0');
+  assert.deepEqual(one.players, { p1: { online: true }, p2: { online: false } });
+  const final = toPlayerView({ ...state, status: 'completed', currentQuestionIndex: 2 }, 'p1', { p1: false, p2: false });
+  assert.equal(final.answers[2].player2.comment, 'P2 2');
 });

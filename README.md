@@ -5,23 +5,17 @@ SvelteKit and Socket.IO share one Node.js service. PostgreSQL runs on a separate
 ## Architecture
 
 ```mermaid
-flowchart LR
-    Browser[Player browsers] <-->|HTTPS and WSS| Edge[Traefik]
-    subgraph TLG[TLG Docker Compose]
-        App[Node.js app: SvelteKit SSR, HTTP API and Socket.IO]
-        DB[(PostgreSQL 19)]
-        Questions[Question files]
-        Volume[(postgres19_data)]
-        App <-->|pg pool on the private network| DB
-        Questions -->|Read-only bind mount| App
-        DB --- Volume
-    end
-    Edge <-->|Shared Docker network, port 3000| App
+flowchart TD
+    Browser["Player browsers"] <-->|HTTPS and WSS| Edge["Traefik"]
+    Edge <--> App["SvelteKit + Socket.IO"]
+    App <--> DB[("DB PostgreSQL")]
 ```
+
+The game engine (`kit/game.ts`) handles rules and returns a player-specific view used by both HTTP and Socket.IO. The repository persists game state in PostgreSQL. Socket presence and the per-game command queue live in the app process, so the current deployment runs **one app replica**.
 
 ## Production
 
-Configure `.env` using `.env.example`. `DATABASE_URL` must point to `tlg-db` and use a dedicated database role with SELECT, INSERT and UPDATE on the game tables and USAGE on the answer ID sequence. On an empty database, apply `kit/schema.sql` as the database owner and grant these permissions before starting the app. Existing databases do not need reinitialization.
+Configure `.env` using `.env.example` and generate a strong `POSTGRES_PASSWORD`; there is no production default. `DATABASE_URL` must point to `tlg-db` and use a dedicated database role with SELECT, INSERT and UPDATE on the game tables and USAGE on the answer ID sequence. On an empty database, apply `kit/schema.sql` as the database owner and grant these permissions before starting the app. Existing databases do not need reinitialization.
 
 ```sh
 docker compose -f compose.prod.yml up -d db
@@ -38,7 +32,7 @@ Use a separate Compose project and a local `.env`. For a disposable local databa
 make up
 ```
 
-Open `http://localhost:3000`. Run `make test` with Node.js 26 for the game logic tests. `make down` stops the local stack without deleting data.
+Open `http://localhost:3000`. Run `make test` with Node.js 26 for the game logic tests, or `npm --prefix kit run check` after `npm ci --prefix kit` to check Svelte and TypeScript. `make down` stops the local stack without deleting data.
 
 ### Browser tests
 
