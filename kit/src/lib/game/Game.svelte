@@ -250,6 +250,7 @@ header {
 }
 
 textarea {
+  box-sizing: border-box;
   width: 100%;
   padding: 0.8rem;
   border: 1px solid #ccc;
@@ -291,10 +292,10 @@ textarea:focus {
   border-radius: .75rem;
 }
 .round-status { margin: 0; color: #465164; }
-.round-ready { min-height: 44px; }
-.round-ready[aria-disabled="true"] { opacity: .65; }
+.round-ready { min-height: 44px; background: #fff; color: #173e68; border: 1px solid #b7c3d6; font-weight: 600; }
+.round-ready[aria-disabled="true"] { background: #f1f3f6; color: #8b96a8; border-color: #dfe4ea; cursor: not-allowed; }
 .card :is(textarea, button) { scroll-margin-bottom: 8rem; }
-.round-ready.ready { background: #fff; color: #173e68; border: 1px solid #173e68; }
+.round-ready.ready { background: #173e68; color: #fff; border: 1px solid #173e68; }
 @media (max-width: 640px) {
   .round-actions { display: grid; gap: .4rem; padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
   .round-ready { width: 100%; }
