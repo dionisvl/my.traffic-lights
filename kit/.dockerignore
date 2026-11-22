@@ -1,0 +1,9 @@
+**
+!package.json
+!package-lock.json
+!vite.config.js
+!server.mjs
+!repository.mjs
+!game.ts
+!src
+!src/**

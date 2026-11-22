@@ -1,100 +1,53 @@
-# Traffic Lights — two‑player online game
+# Traffic Lights Game
 
-Stack: Nuxt 3 (frontend) + NestJS (backend) + Socket.IO. Two players choose answers (🔴/🟡/🟢), add comments, and move forward only when both are ready. State is kept in memory or in Postgres.
-
-## Quick start (local)
-- Install deps: `npm i`
-- Start backend (NestJS, port 4000): `npm run dev:back`
-- In another terminal start frontend (Nuxt, port 3000): `npm run dev:front`
-- Open `http://localhost:3000`
-
-Frontend runtime config:
-- `NUXT_PUBLIC_API_BASE` — API base URL (default `http://localhost:4000`)
-- `NUXT_PUBLIC_WS_URL` — Socket.IO URL (default `http://localhost:4000`)
-
-Backend uses `DATABASE_URL` to connect to Postgres. If not set, in‑memory repository is used.
-
-## Docker Compose (frontend + backend + postgres)
-- Run: `docker compose -f compose.base.yml -f compose.dev.yml up --build`
-- Frontend: `http://localhost:3000`
-- Backend (Nest): `http://localhost:4000`
-
-In `compose.yml` frontend gets `NUXT_PUBLIC_API_BASE=http://backend:4000` and `NUXT_PUBLIC_WS_URL=http://backend:4000`.
-
-## Production Deployment
-```bash
-./deploy-prod.sh
-```
-Auto-deploy script that:
-1. Creates `.env` from `.env.prod.example` template (if missing)
-2. Builds Docker images for frontend & backend
-3. Starts services via `docker compose -f compose.base.yml -f compose.prod.yml`
-
-Before first deploy, create `.env` from `.env.prod.example` and set:
-- `DOMAIN` - your domain
-- `POSTGRES_PASSWORD` - secure password
-- `ACME_EMAIL` - for SSL certificates
-
-## Database
-- Env: `DATABASE_URL=postgresql://user:password@localhost:5432/game_db`
-- Schema is created automatically on first access (see `backend/src/repo/pg_normalized.ts`). No separate migrations for MVP.
-
-## Scripts
-- `npm test` — unit tests for game engine (node:test)
-- `npm run dev:front` — Nuxt dev (port 3000)
-- `npm run dev:back` — Nest dev (port 4000)
-- `npm run dev:all` — front and back together
-- `npm run nuxt:build` — build frontend
-- `npm run e2e:attach` / `npm run e2e` — e2e against backend (see below)
-
-## E2E
-E2E script now targets the Nest backend. It starts `npm run start:dev --prefix backend` (unless `--attach`) and hits:
-- `POST /game` to create a game
-- connects two Socket.IO clients, runs the flow, and polls `GET /game/:id`
-
-## Playwright Tests
-**IMPORTANT: Backend and frontend MUST be running before running Playwright tests!**
-
-1. Start backend: `npm run dev:back` (port 4000)
-2. Start frontend: `npm run dev:front` (port 3000)
-3. Run tests: `npm run test:pw`
-
-To run the browser-based end-to-end tests, use one of these commands:
-
-**With Docker services:**
-```bash
-make playwright-docker
-```
-
-**Standalone (starts own servers):**
-```bash
-make playwright
-```
-This will launch a real browser and simulate the full user flow.
-
-## HTTP API (Nest, port 4000)
-- `POST /game` — body: `{ questions: string[] }` → `{ gameId }`
-- `GET /game/:id` — snapshot:
-  `{ game: { id, status, currentQuestionIndex, total }, players: { p1: { online }, p2: { online } }, answers: [{ questionIndex, questionText, player1: { answer, comment }, player2: { answer, comment } }] }`
-
-## Socket.IO events
-- Client → Server: `join_game { gameId, playerId }`, `start_game { gameId }`, `choose_answer { gameId, questionIndex, answer }`, `submit_comment { gameId, questionIndex, comment }`, `ready_next { gameId, questionIndex, ready }`
-- Server → Client: `joined { role }`, `player_status { player, online }`, `game_started {}`,
-  `question_show { questionIndex }`, `answer_updated { questionIndex }`, `comment_received { questionIndex, player }`, `next_question { questionIndex }`, `game_completed {}`
+SvelteKit and Socket.IO share one Node.js service. PostgreSQL runs on a separate Docker network from Traefik; only the app connects to both networks.
 
 ## Architecture
-- Core: `src/game.ts` — pure functions, immutable, covered by tests
-- Backend (NestJS): `backend/src/*` — `game.controller.ts`, `game.gateway.ts`, `repo/*`
-- Frontend (Nuxt): pages in `pages/*`, socket composable in `composables/useSocket.client.ts`
-- Repository: `backend/src/repo/*` — In‑Memory or Postgres (normalized); selected via `DATABASE_URL`
-- Online statuses: in backend process memory (MVP)
-- `docs/game-flow-sequence.puml` - Diagram of the game's complete flow and architecture.
 
-## UI
-- `/` — create a game, returns link `/game/{UUID}`
-- `/game/{UUID}` — gameplay screen
-- `/game/{UUID}/results` — results table
+```mermaid
+flowchart LR
+    Browser[Player browsers] <-->|HTTPS and WSS| Edge[Traefik]
+    subgraph TLG[TLG Docker Compose]
+        App[Node.js app: SvelteKit SSR, HTTP API and Socket.IO]
+        DB[(PostgreSQL 19)]
+        Questions[Question files]
+        Volume[(postgres19_data)]
+        App <-->|pg pool on the private network| DB
+        Questions -->|Read-only bind mount| App
+        DB --- Volume
+    end
+    Edge <-->|Shared Docker network, port 3000| App
+```
 
-## Notes
-- Minimal deps, clear interfaces, tests for critical logic
-- Ready to extend: auth, persistent online tracking, repository adapters for different DBs
+## Production
+
+Configure `.env` using `.env.example`. `DATABASE_URL` must point to `tlg-db` and use a dedicated database role with SELECT, INSERT and UPDATE on the game tables and USAGE on the answer ID sequence. On an empty database, apply `kit/schema.sql` as the database owner and grant these permissions before starting the app. Existing databases do not need reinitialization.
+
+```sh
+docker compose -f compose.prod.yml up -d db
+docker compose -f compose.prod.yml up -d --build --wait app
+```
+
+The external Traefik network must already exist. The `postgres19_data` volume stores all game data.
+
+## Local development
+
+Use a separate Compose project and a local `.env`. For a disposable local database, set `DATABASE_URL` to use the same credentials as `POSTGRES_USER` and `POSTGRES_PASSWORD`. The development override initializes the schema on first startup.
+
+```sh
+make up
+```
+
+Open `http://localhost:3000`. Run `make test` with Node.js 26 for the game logic tests. `make down` stops the local stack without deleting data.
+
+### Browser tests
+
+With the local Compose stack running, install Chromium and run Playwright:
+
+```sh
+npm ci --prefix kit
+(cd kit && npx playwright install chromium)
+make playwright
+```
+
+The test creates a game in the local database. The default target is `http://localhost:3000`; use `PLAYWRIGHT_BASE_URL` only for an isolated test deployment.

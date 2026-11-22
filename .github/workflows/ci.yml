@@ -1,39 +1,36 @@
 name: CI
-
 on:
   push:
-    branches: [ main, master ]
+    branches: [main]
   pull_request:
-    branches: [ main, master ]
-
+    branches: [main]
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: game_db
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Use Node.js 20
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 24
-          cache: npm
-
-      - name: Install root deps
-        run: npm ci
-
-      - name: Install backend deps
-        run: npm ci --prefix backend
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Unit tests
-        run: npm test
-
-      - name: Build frontend (Nuxt)
-        run: npm run nuxt:build
-
-      - name: Build backend (tsc)
-        run: npm run build --prefix backend
-
+          node-version: 26.13.1
+      - run: node --test kit/test/game.test.mjs
+      - name: Generate temporary database credentials
+        shell: bash
+        run: |
+          password=$(openssl rand -hex 24)
+          printf '::add-mask::%s\n' "$password"
+          printf 'POSTGRES_PASSWORD=%s\n' "$password" >> "$GITHUB_ENV"
+          printf 'DATABASE_URL=postgresql://%s:%s@tlg-db:5432/%s\n' "$POSTGRES_USER" "$password" "$POSTGRES_DB" >> "$GITHUB_ENV"
+      - run: |
+          docker compose -p tlg-ci -f compose.prod.yml -f compose.dev.yml up -d --build --wait
+          docker compose -p tlg-ci -f compose.prod.yml -f compose.dev.yml exec -T -e TEST_URL=http://127.0.0.1:3000 app timeout 30 node --input-type=module < kit/test/flow.mjs
+      - name: Run Playwright browser test
+        working-directory: kit
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+      - if: always()
+        run: docker compose -p tlg-ci -f compose.prod.yml -f compose.dev.yml down --volumes
