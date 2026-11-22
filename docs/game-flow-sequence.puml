@@ -1,0 +1,177 @@
+@startuml Traffic Lights Game Flow
+
+title Traffic Lights Game - Complete Flow Sequence (SvelteKit)
+
+participant "Player 1\n(Admin)" as P1
+participant "Browser 1\n(Svelte)" as F1
+participant "Player 2" as P2
+participant "Browser 2\n(Svelte)" as F2
+participant "Node server\n(kit/server.mjs)" as SRV
+participant "Game feature\n(server/feature.mjs)" as GF
+participant "Domain\n(game/domain.ts)" as DOM
+database "PostgreSQL\n(games, game_answers)" as DB
+
+note over F1, F2
+  Player identity: identity() keeps a random UUID in sessionStorage('player_id').
+  HTTP sends it as "Authorization: Bearer <uuid>",
+  Socket.IO sends it in handshake auth.playerId.
+end note
+
+note over GF
+  Every socket event is serialized per gameId (in-memory queue)
+  and runs in a DB transaction: get -> domain fn -> put.
+  "Online" status is not stored: it is derived from sockets in room game:<id>.
+end note
+
+== Game Creation (Lobby) ==
+P1 -> F1: Opens /
+F1 -> SRV: GET /api/questions
+SRV --> F1: {files: [{name}]} (from QUESTIONS_DIR)
+opt Picks a question file
+  F1 -> SRV: GET /api/questions/{name}
+  SRV --> F1: {content}
+end
+P1 -> F1: Confirms 18+, edits questions (one per line)
+P1 -> F1: Clicks "Create Game"
+F1 -> SRV: POST /api/game {questions: string[]}
+SRV -> GF: http(req)
+GF -> GF: check Bearer uuid, Origin, 1-100 questions of max 500 chars
+GF -> DOM: createGame(randomUUID(), questions)
+DOM --> GF: GameState (status: waiting)
+GF -> GF: players.p1.id = Bearer id (creator is admin)
+GF -> DB: BEGIN; put(state); COMMIT
+GF --> F1: 201 {gameId}
+F1 -> F1: goto(/game/{gameId})
+
+== Connection & Join (P1) ==
+F1 -> SRV: io() websocket, auth {playerId}
+SRV -> GF: io.use: playerId must be a uuid
+F1 -> GF: emitWithAck('join_game', {gameId})
+GF -> DB: get(gameId)
+note right of GF: p1.id already matches, so role = p1 (nothing written)
+GF -> GF: socket.data = {gameId, role}; socket.join(game:<id>)
+GF -> F1: emit('snapshot', view) to each socket in the room
+GF --> F1: ack {ok, role: 'p1', snapshot}
+F1 -> P1: Waiting room, share link, "Start Game" disabled
+
+== Player 2 Joins ==
+P2 -> F2: Opens shared link /game/{gameId}
+F2 -> SRV: io() websocket, auth {playerId}
+F2 -> GF: emitWithAck('join_game', {gameId})
+GF -> DB: BEGIN; get(gameId)
+GF -> GF: not a member yet, status must be 'waiting'
+GF -> DOM: joinGame(state, playerId)
+DOM --> GF: {state, role: 'p2'}
+GF -> DB: put(state); COMMIT
+GF -> GF: socket.join(game:<id>)
+GF -> F1: emit('snapshot') (p2 online)
+GF -> F2: emit('snapshot')
+GF --> F2: ack {ok, role: 'p2', snapshot}
+F1 -> P1: "Start Game" enabled
+F2 -> P2: Waiting for the admin to start
+
+== Game Start ==
+P1 -> F1: Clicks "Start Game"
+F1 -> GF: emitWithAck('start_game', {gameId, questionIndex})
+GF -> GF: socket must have joined this game; both p1 and p2 online
+GF -> DB: BEGIN; get
+GF -> DOM: startGame(state, 'p1')
+note right of DOM: only the admin (p1); status -> in_progress, index 0
+GF -> DB: put; COMMIT
+GF -> F1: emit('snapshot')
+GF -> F2: emit('snapshot')
+GF --> F1: ack {ok, snapshot}
+F1 -> P1: Question 1 + 🟢 / 🟡 / 🔴
+F2 -> P2: Question 1 + 🟢 / 🟡 / 🔴
+
+== Answering ==
+P1 -> F1: Clicks "🟢 Yes"
+F1 -> GF: emitWithAck('choose_answer', {gameId, questionIndex: 0, answer: 'green'})
+GF -> DB: BEGIN; get
+GF -> DOM: chooseAnswer(state, 'p1', 0, 'green')
+note right of DOM: sets answeredAt, revealedAt (first answer), resets p1.ready
+GF -> DB: put; COMMIT
+GF -> F1: emit('snapshot') (own answer visible)
+GF -> F2: emit('snapshot') (partner's answer hidden until the round ends)
+F2 -> P2: Partner's ready state only
+
+P2 -> F2: Clicks "🔴 No"
+F2 -> GF: emitWithAck('choose_answer', {..., answer: 'red'})
+GF -> DOM: chooseAnswer(state, 'p2', 0, 'red')
+GF -> F1: emit('snapshot')
+GF -> F2: emit('snapshot')
+
+== Comment + Ready ==
+P1 -> F1: Types a comment (kept locally)
+P1 -> F1: Clicks "Ready" (needs an answer)
+alt Comment changed since last save
+  F1 -> GF: emitWithAck('submit_comment', {gameId, questionIndex: 0, comment})
+  GF -> DOM: submitComment(state, 'p1', 0, comment)
+  note right of DOM: also resets p1.ready = false
+  GF -> F1: emit('snapshot')
+  GF -> F2: emit('snapshot')
+end
+F1 -> GF: emitWithAck('ready_next', {gameId, questionIndex: 0, ready: true})
+GF -> DOM: setReady(state, 'p1', 0, true)
+note right of DOM: rejected without an answer; p2 not ready yet, so no advance
+GF -> DB: put; COMMIT
+GF -> F1: emit('snapshot') (comment field locked, "Cancel ready")
+GF -> F2: emit('snapshot') ("The other player is ready.")
+
+opt P1 changes their mind
+  P1 -> F1: Clicks "Cancel ready"
+  F1 -> GF: emitWithAck('ready_next', {..., ready: false})
+end
+
+P2 -> F2: Clicks "Ready"
+F2 -> GF: emitWithAck('ready_next', {gameId, questionIndex: 0, ready: true})
+GF -> DOM: setReady(state, 'p2', 0, true)
+note right of DOM: both ready with answers: currentQuestionIndex -> 1
+GF -> DB: put; COMMIT
+GF -> F1: emit('snapshot') (index 1, round 0 fully revealed)
+GF -> F2: emit('snapshot')
+F1 -> P1: Question 2, comment cleared, results table with round 1
+F2 -> P2: Question 2, comment cleared, results table with round 1
+
+== Repeat for Remaining Questions ==
+note over P1, DB: Same flow repeats for each question...
+
+== Game Completion (Last Question) ==
+P1 -> F1: Answers the last question + Ready
+P2 -> F2: Answers the last question + Ready
+F2 -> GF: emitWithAck('ready_next', {gameId, questionIndex: N-1, ready: true})
+GF -> DOM: setReady(state, 'p2', N-1, true)
+note right of DOM: both ready on the last question: status -> completed
+GF -> DB: put; COMMIT
+GF -> F1: emit('snapshot') (status: completed)
+GF -> F2: emit('snapshot') (status: completed)
+F1 -> P1: "Game completed", full results, "Open results" link
+F2 -> P2: "Game completed", full results, "Open results" link
+
+opt Results page
+  P1 -> F1: Opens /game/{gameId}/results
+  F1 -> SRV: GET /api/game/{gameId} (Bearer playerId)
+  SRV -> GF: http(req)
+  GF -> DB: get(gameId)
+  GF -> GF: caller must be p1 or p2 (403 otherwise)
+  GF -> DOM: toPlayerView(state, role, online)
+  GF --> F1: 200 view
+  F1 -> P1: Results table
+end
+
+== Disconnect / Reconnect ==
+F2 -> F2: Tab closed or network lost
+SRV -> GF: socket 'disconnect'
+GF -> GF: publish(gameId) (p2 is no longer in the room)
+GF -> F1: emit('snapshot') (p2 offline)
+F1 -> P1: "The other player is offline."
+
+P2 -> F2: Returns to /game/{gameId} (same tab, same sessionStorage id)
+F2 -> GF: Socket.IO reconnects, emitWithAck('join_game')
+GF -> DB: get(gameId)
+note right of GF: existing member, so the role is restored even after start
+GF -> F1: emit('snapshot') (p2 online)
+GF --> F2: ack {ok, role: 'p2', snapshot}
+F2 -> P2: Game state restored
+
+@enduml
